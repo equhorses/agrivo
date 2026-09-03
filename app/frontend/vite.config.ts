@@ -2,8 +2,6 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import fs from 'node:fs';
 import path from 'path';
-import { viteSourceLocator } from '@metagptx/vite-plugin-source-locator';
-import { atoms } from '@metagptx/web-sdk/plugins';
 import { vitePrerenderPlugin } from 'vite-prerender-plugin';
 import Sitemap from 'vite-plugin-sitemap';
 import { getBlogRoutes } from './prerender/blog-routes.js';
@@ -18,10 +16,11 @@ function escapeHtmlAttr(str: string): string {
     .replace(/'/g, '&#39;');
 }
 
-// Force Agrivo branding regardless of system env vars
-process.env.VITE_APP_TITLE = 'Agrivo';
-process.env.VITE_APP_DESCRIPTION = escapeHtmlAttr(process.env.OVERVIEW_DESCRIPTION ?? 'Marketplace global de servicios agrícolas. Conectamos agricultores con profesionales del campo.');
-process.env.VITE_APP_LOGO_URL = 'https://mgx-backend-cdn.metadl.com/generate/images/1410088/2026-07-07/sakrtaqcaiza/agrivo-favicon-logo.png';
+process.env.VITE_APP_TITLE ??= process.env.OVERVIEW_TITLE ?? 'Agrivo';
+process.env.VITE_APP_DESCRIPTION ??= process.env.OVERVIEW_DESCRIPTION ?? 'El mayor marketplace agrario del mundo. Mejora la gestión agrícola con resultados rápidos y detallados.';
+process.env.VITE_APP_TITLE = escapeHtmlAttr(process.env.VITE_APP_TITLE);
+process.env.VITE_APP_DESCRIPTION = escapeHtmlAttr(process.env.VITE_APP_DESCRIPTION);
+process.env.VITE_APP_LOGO_URL ??= process.env.OVERVIEW_LOGO_URL ?? '/favicon.svg';
 
 function ensureBuildOutDir() {
   let outDir = path.resolve(__dirname, 'dist');
@@ -43,17 +42,23 @@ export default defineConfig(({ command }) => {
 
   return {
     plugins: [
-      viteSourceLocator({
-        prefix: 'mgx', // Prefix used to identify source locations; do not change.
-      }),
       react(),
-      atoms(),
       ensureBuildOutDir(),
       Sitemap({
-        hostname: 'https://atoms.template.com',
+        hostname: 'https://www.agrivo.com',
         lastmod: getSitemapLastmod(),
         readable: true,
-        generateRobotsTxt: true,
+        generateRobotsTxt: false,
+        dynamicRoutes: [
+          '/jobs',
+          '/jobs/new',
+          '/pros',
+          '/precios',
+          '/legal/aviso-legal',
+          '/legal/privacidad',
+          '/legal/terminos',
+        ],
+        exclude: ['/blog', '/blog/'],
       }),
       ...(blogPrerenderRoutes.length > 0
         ? vitePrerenderPlugin({

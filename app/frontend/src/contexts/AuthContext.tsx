@@ -11,8 +11,11 @@ interface User {
   id: string;
   email: string;
   name?: string;
+  avatar_url?: string;
   role: string;
   last_login?: string;
+  account_status?: string;
+  scheduled_purge_at?: string;
 }
 
 interface AuthContextType {
@@ -23,7 +26,11 @@ interface AuthContextType {
   logout: () => Promise<void>;
   refetch: () => Promise<void>;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
+  isStaff: boolean;
 }
+
+const STAFF_ROLES = new Set(['admin', 'marketing', 'seguridad', 'moderacion', 'soporte']);
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -59,18 +66,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const login = async () => {
-    try {
-      setError(null);
-      await authApi.login();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
-    }
+    // The old flow redirected straight to an external OIDC provider.
+    // Now we just send the user to our own login/register page.
+    window.location.href = '/login';
   };
 
   const logout = async () => {
     try {
       setError(null);
       await authApi.logout();
+      setUser(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Logout failed');
     }
@@ -88,6 +93,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     refetch: checkAuthStatus,
     isAdmin: user?.role === 'admin',
+    isSuperAdmin: user?.role === 'admin',
+    isStaff: !!user && STAFF_ROLES.has(user.role),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

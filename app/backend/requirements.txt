@@ -35,3 +35,4 @@ PyMuPDF
 
 # payment module dependencies
 stripe>=12.0.0
+apscheduler>=3.10.0,<4.0.0

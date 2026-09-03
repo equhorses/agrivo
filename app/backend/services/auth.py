@@ -1,14 +1,17 @@
 import logging
 import os
-import time
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional, Tuple
 
 from core.auth import create_access_token
 from core.config import settings
 from core.database import db_manager
-from models.auth import OIDCState, User
-from sqlalchemy import delete, select
+from core.security import hash_password, verify_password
+from fastapi import HTTPException, status
+from models.auth import User
+from services.email import send_welcome_email
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
@@ -18,31 +21,131 @@ class AuthService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_or_create_user(self, platform_sub: str, email: str, name: Optional[str] = None) -> User:
-        """Get existing user or create new one."""
-        start_time = time.time()
-        logger.debug(f"[DB_OP] Starting get_or_create_user - platform_sub: {platform_sub}")
-        # Try to find existing user
-        result = await self.db.execute(select(User).where(User.id == platform_sub))
-        user = result.scalar_one_or_none()
-        logger.debug(f"[DB_OP] User lookup completed in {time.time() - start_time:.4f}s - found: {user is not None}")
+    async def register_user(
+        self, email: str, password: str, name: Optional[str] = None, age_confirmed: bool = False
+    ) -> User:
+        """Create a new user account with email + password.
 
-        if user:
-            # Update user info if needed
-            user.email = email
-            user.name = name
-            user.last_login = datetime.now(timezone.utc)
-        else:
-            # Create new user
-            user = User(id=platform_sub, email=email, name=name, last_login=datetime.now(timezone.utc))
-            self.db.add(user)
+        Requires an explicit self-declared 18+ confirmation, recorded with a
+        timestamp. Enforced here (not just in the request schema/router) so
+        this stays true even if a future caller forgets the frontend check.
+        """
+        if not age_confirmed:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Debes confirmar que eres mayor de 18 años para crear una cuenta",
+            )
 
-        start_time_commit = time.time()
-        logger.debug("[DB_OP] Starting user commit/refresh")
+        normalized_email = email.strip().lower()
+
+        result = await self.db.execute(select(User).where(User.email == normalized_email))
+        existing = result.scalar_one_or_none()
+        if existing:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Ya existe una cuenta con ese email")
+
+        user = User(
+            id=str(uuid.uuid4()),
+            email=normalized_email,
+            password_hash=hash_password(password),
+            name=name or normalized_email.split("@", 1)[0],
+            role="user",
+            last_login=datetime.now(timezone.utc),
+            age_confirmed_at=datetime.now(timezone.utc),
+        )
+        self.db.add(user)
         await self.db.commit()
         await self.db.refresh(user)
-        logger.debug(f"[DB_OP] User commit/refresh completed in {time.time() - start_time_commit:.4f}s")
+        await send_welcome_email(to_email=user.email, name=user.name)
         return user
+
+    async def authenticate_user(self, email: str, password: str) -> User:
+        """Verify email + password and return the matching user."""
+        normalized_email = email.strip().lower()
+
+        result = await self.db.execute(select(User).where(User.email == normalized_email))
+        user = result.scalar_one_or_none()
+
+        if not user or not user.password_hash:
+            # Either the email doesn't exist, or it exists but was created via
+            # Google (no password set) — give an honest, actionable message
+            # instead of the generic "wrong credentials" in the latter case.
+            if user and not user.password_hash:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Esta cuenta se creó con Google. Inicia sesión con el botón 'Continuar con Google'.",
+                )
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email o contraseña incorrectos")
+
+        if not verify_password(password, user.password_hash):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email o contraseña incorrectos")
+
+        if user.account_status == "banned":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Esta cuenta ha sido suspendida por el equipo de Agrivo. Contacta con soporte.",
+            )
+
+        if user.account_status == "suspended":
+            user.account_status = "active"
+            user.suspended_at = None
+
+        user.last_login = datetime.now(timezone.utc)
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
+    async def get_or_create_google_user(
+        self, email: str, name: Optional[str] = None, age_confirmed: bool = False
+    ) -> Tuple[User, bool]:
+        """Find a user by email (created via Google or previously via password),
+        or create a new one. Google-authenticated accounts have no password_hash,
+        so they can only ever log in again via Google.
+
+        `age_confirmed` is only required — and only recorded — when this is a
+        genuinely new account. Google's own login doesn't expose the person's
+        age to us, so this self-declaration (ticked before the OAuth redirect)
+        is our only signal; existing users logging back in aren't asked again.
+
+        Returns (user, is_new_user) so the caller can show a welcome message
+        only to genuinely new accounts."""
+        normalized_email = email.strip().lower()
+
+        result = await self.db.execute(select(User).where(User.email == normalized_email))
+        user = result.scalar_one_or_none()
+
+        is_new_user = False
+        if user:
+            if user.account_status == "banned":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Esta cuenta ha sido suspendida por el equipo de Agrivo. Contacta con soporte.",
+                )
+            user.last_login = datetime.now(timezone.utc)
+            if name and not user.name:
+                user.name = name
+        else:
+            if not age_confirmed:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Debes confirmar que eres mayor de 18 años para crear una cuenta",
+                )
+            is_new_user = True
+            user = User(
+                id=str(uuid.uuid4()),
+                email=normalized_email,
+                password_hash=None,
+                name=name or normalized_email.split("@", 1)[0],
+                role="user",
+                last_login=datetime.now(timezone.utc),
+                age_confirmed_at=datetime.now(timezone.utc),
+            )
+            self.db.add(user)
+
+        await self.db.commit()
+        await self.db.refresh(user)
+        if is_new_user:
+            await send_welcome_email(to_email=user.email, name=user.name)
+        return user, is_new_user
 
     async def issue_app_token(
         self,
@@ -69,39 +172,6 @@ class AuthService:
         token = create_access_token(claims, expires_minutes=expires_minutes)
 
         return token, expires_at, claims
-
-    async def store_oidc_state(self, state: str, nonce: str, code_verifier: str):
-        """Store OIDC state in database."""
-        # Clean up expired states first
-        await self.db.execute(delete(OIDCState).where(OIDCState.expires_at < datetime.now(timezone.utc)))
-
-        expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)  # 10 minute expiry
-
-        oidc_state = OIDCState(state=state, nonce=nonce, code_verifier=code_verifier, expires_at=expires_at)
-
-        self.db.add(oidc_state)
-        await self.db.commit()
-
-    async def get_and_delete_oidc_state(self, state: str) -> Optional[dict]:
-        """Get and delete OIDC state from database."""
-        # Clean up expired states first
-        await self.db.execute(delete(OIDCState).where(OIDCState.expires_at < datetime.now(timezone.utc)))
-
-        # Find and validate state
-        result = await self.db.execute(select(OIDCState).where(OIDCState.state == state))
-        oidc_state = result.scalar_one_or_none()
-
-        if not oidc_state:
-            return None
-
-        # Extract data before deleting
-        state_data = {"nonce": oidc_state.nonce, "code_verifier": oidc_state.code_verifier}
-
-        # Delete the used state (one-time use)
-        await self.db.delete(oidc_state)
-        await self.db.commit()
-
-        return state_data
 
 
 async def initialize_admin_user():
