@@ -1,0 +1,27 @@
+{
+    "title": "subscriptions",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "plan": {
+            "type": "string",
+            "description": "free, pro, enterprise"
+        },
+        "status": {
+            "type": "string",
+            "default": "active"
+        },
+        "stripe_session_id": {
+            "type": "string"
+        },
+        "user_id": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "plan",
+        "user_id"
+    ]
+}

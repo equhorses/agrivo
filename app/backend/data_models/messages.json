@@ -1,0 +1,29 @@
+{
+    "title": "messages",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "job_id": {
+            "type": "integer"
+        },
+        "sender_id": {
+            "type": "string"
+        },
+        "receiver_id": {
+            "type": "string"
+        },
+        "content": {
+            "type": "string"
+        },
+        "user_id": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "job_id",
+        "content",
+        "user_id"
+    ]
+}

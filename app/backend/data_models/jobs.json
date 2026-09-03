@@ -1,0 +1,52 @@
+{
+    "title": "jobs",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "title": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "category": {
+            "type": "string"
+        },
+        "country": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string"
+        },
+        "hectares": {
+            "type": "number"
+        },
+        "budget_min": {
+            "type": "number"
+        },
+        "budget_max": {
+            "type": "number"
+        },
+        "contract_type": {
+            "type": "string",
+            "description": "reverse_auction or fixed_price"
+        },
+        "status": {
+            "type": "string",
+            "default": "open"
+        },
+        "user_id": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "title",
+        "category",
+        "country",
+        "location",
+        "contract_type",
+        "user_id"
+    ]
+}

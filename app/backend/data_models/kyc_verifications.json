@@ -1,0 +1,55 @@
+{
+    "title": "kyc_verifications",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "full_name": {
+            "type": "string"
+        },
+        "document_type": {
+            "type": "string"
+        },
+        "document_number": {
+            "type": "string"
+        },
+        "country": {
+            "type": "string"
+        },
+        "address": {
+            "type": "string"
+        },
+        "specialty": {
+            "type": "string"
+        },
+        "years_experience": {
+            "type": "integer"
+        },
+        "certifications": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "document_photo_url": {
+            "type": "string"
+        },
+        "status": {
+            "type": "string"
+        },
+        "plan": {
+            "type": "string"
+        },
+        "user_id": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "full_name",
+        "document_type",
+        "document_number",
+        "status",
+        "user_id"
+    ]
+}

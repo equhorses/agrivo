@@ -1,0 +1,33 @@
+{
+    "title": "reviews",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "professional_id": {
+            "type": "string"
+        },
+        "job_id": {
+            "type": "integer"
+        },
+        "rating": {
+            "type": "integer"
+        },
+        "comment": {
+            "type": "string"
+        },
+        "reviewer_name": {
+            "type": "string"
+        },
+        "user_id": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "professional_id",
+        "rating",
+        "comment",
+        "user_id"
+    ]
+}

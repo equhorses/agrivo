@@ -1,0 +1,57 @@
+{
+    "title": "profiles",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "display_name": {
+            "type": "string"
+        },
+        "role": {
+            "type": "string",
+            "description": "farmer or professional"
+        },
+        "country": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "avatar_url": {
+            "type": "string"
+        },
+        "rating": {
+            "type": "number",
+            "default": 0
+        },
+        "jobs_completed": {
+            "type": "integer",
+            "default": 0
+        },
+        "service_radius_km": {
+            "type": "integer",
+            "default": 50
+        },
+        "verified_kyc": {
+            "type": "boolean",
+            "default": false
+        },
+        "categories": {
+            "type": "string",
+            "description": "comma-separated categories"
+        },
+        "language": {
+            "type": "string",
+            "default": "es"
+        },
+        "user_id": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "display_name",
+        "role",
+        "user_id"
+    ]
+}

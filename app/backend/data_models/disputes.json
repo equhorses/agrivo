@@ -1,0 +1,37 @@
+{
+    "title": "disputes",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "job_title": {
+            "type": "string"
+        },
+        "reason": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "amount_disputed": {
+            "type": "number"
+        },
+        "status": {
+            "type": "string"
+        },
+        "resolution": {
+            "type": "string"
+        },
+        "user_id": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "job_title",
+        "reason",
+        "description",
+        "status",
+        "user_id"
+    ]
+}

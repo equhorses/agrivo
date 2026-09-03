@@ -1,0 +1,30 @@
+{
+    "title": "bids",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "job_id": {
+            "type": "integer"
+        },
+        "amount": {
+            "type": "number"
+        },
+        "message": {
+            "type": "string"
+        },
+        "status": {
+            "type": "string",
+            "default": "pending"
+        },
+        "user_id": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "job_id",
+        "amount",
+        "user_id"
+    ]
+}
