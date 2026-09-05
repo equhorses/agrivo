@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { createClient } from '@metagptx/web-sdk';
+import { createClient } from '@/lib/atomsClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Card, CardContent } from '@/components/ui/card';

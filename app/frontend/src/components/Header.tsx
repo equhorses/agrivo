@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { createClient } from '@metagptx/web-sdk';
+import { createClient } from '@/lib/atomsClient';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu, User, LogOut, LayoutDashboard, MessageSquare, AlertTriangle, Shield } from 'lucide-react';

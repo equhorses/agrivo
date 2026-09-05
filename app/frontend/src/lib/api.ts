@@ -1,4 +1,4 @@
-import { createClient } from '@metagptx/web-sdk';
+import { createClient } from '@/lib/atomsClient';
 
 // Create client instance
 export const client = createClient();

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createClient } from '@metagptx/web-sdk';
+import { createClient } from '@/lib/atomsClient';
 
 const client = createClient();
 
