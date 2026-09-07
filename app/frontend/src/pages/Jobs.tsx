@@ -3,6 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { createClient } from '@/lib/atomsClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import AdSlot from '@/components/AdSlot';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -67,6 +68,9 @@ export default function Jobs() {
       <Header />
 
       <main className="flex-1">
+        <div className="container pt-8">
+          <AdSlot slot="jobs_top" />
+        </div>
         {/* Page Header */}
         <section className="bg-gradient-to-br from-slate-50 to-emerald-50/30 border-b py-12">
           <div className="container">

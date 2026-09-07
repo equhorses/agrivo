@@ -16,28 +16,29 @@ export default function PaymentSuccess() {
   const [verified, setVerified] = useState(false);
 
   useEffect(() => {
-    // Verify payment
-    const sessionId = searchParams.get('session_id');
-    if (sessionId) {
-      client.payment.verifyPayment({ session_id: sessionId })
-        .then(() => setVerified(true))
-        .catch(() => setVerified(true)); // Still show success UI
-    } else {
-      setVerified(true);
-    }
-
-    // Save subscription record
-    client.auth.me().then((res) => {
-      if (res?.data) {
-        client.entities.subscriptions.create({
-          data: {
-            plan: plan,
-            status: 'active',
-            started_at: new Date().toISOString(),
-          },
-        }).catch(() => {});
-      }
-    }).catch(() => {});
+    // El estado real de la suscripción lo fija el webhook de Stripe en el
+    // backend (services/subscriptions.py), no esta página — aquí solo
+    // comprobamos que ya se activó antes de mostrar el siguiente paso.
+    let attempts = 0;
+    const checkActivated = () => {
+      client.payment.getMySubscription()
+        .then((res) => {
+          if (res?.data?.subscription_status === 'active') {
+            setVerified(true);
+            return;
+          }
+          attempts += 1;
+          if (attempts < 6) {
+            // El webhook puede tardar unos segundos en llegar; reintentamos
+            // brevemente antes de mostrar la confirmación igualmente.
+            setTimeout(checkActivated, 1500);
+          } else {
+            setVerified(true);
+          }
+        })
+        .catch(() => setVerified(true));
+    };
+    checkActivated();
   }, []);
 
   return (

@@ -3,6 +3,8 @@
 Jobs living here:
   - purge_scheduled_account_deletions: permanently erases accounts whose
     5-year retention window (after a self-service deletion request) is up.
+  - check_ad_bookings: expires house-ad slot bookings past their 30 days and
+    promotes the next queued advertiser (if any) into the freed-up slot.
 
 All are defensive: any single row failing is logged and skipped rather than
 aborting the whole run.
@@ -15,9 +17,20 @@ from sqlalchemy import select
 from core.database import db_manager
 from models.auth import User
 from services.audit import log_admin_action
+from services.house_ad_bookings import AdBookingsService
 from services.user import purge_user_completely
 
 logger = logging.getLogger(__name__)
+
+
+async def check_ad_bookings() -> None:
+    """Expire ad slot bookings past their 30 days, and promote the next
+    queued advertiser (if any) into the freed-up slot."""
+    if not db_manager.async_session_maker:
+        await db_manager.ensure_initialized()
+    async with db_manager.async_session_maker() as db:
+        service = AdBookingsService(db)
+        await service.expire_and_promote()
 
 
 async def purge_scheduled_account_deletions() -> None:
@@ -61,3 +74,8 @@ async def run_daily_jobs() -> None:
         await purge_scheduled_account_deletions()
     except Exception:
         logger.exception("Fallo en purge_scheduled_account_deletions")
+
+    try:
+        await check_ad_bookings()
+    except Exception:
+        logger.exception("Fallo en check_ad_bookings")

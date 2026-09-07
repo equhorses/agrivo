@@ -4,6 +4,7 @@ import { createClient } from '@/lib/atomsClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CookieConsent from '@/components/CookieConsent';
+import AdSlot from '@/components/AdSlot';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -107,6 +108,10 @@ export default function Index() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
+
+      <div className="container">
+        <AdSlot slot="home_top" />
+      </div>
 
       {/* Hero Section */}
       <section className="relative overflow-hidden min-h-[600px] flex items-center">

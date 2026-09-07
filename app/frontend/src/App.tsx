@@ -19,6 +19,7 @@ import AuthError from './pages/AuthError';
 import Legal from './pages/Legal';
 import Admin from './pages/Admin';
 import Downloads from './pages/Downloads';
+import Publicidad from './pages/Publicidad';
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const AppRoutes = () => (
     <Route path="/legal/:page" element={<Legal />} />
     <Route path="/admin" element={<Admin />} />
     <Route path="/descargas" element={<Downloads />} />
+    <Route path="/publicidad" element={<Publicidad />} />
   </Routes>
 );
 

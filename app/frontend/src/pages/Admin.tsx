@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle, XCircle, Clock, Shield, FileText, User } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { CheckCircle, XCircle, Clock, Shield, FileText, User, Megaphone } from 'lucide-react';
 import { toast } from 'sonner';
 
 const client = createClient();
@@ -26,13 +28,46 @@ interface KycItem {
   created_at: string;
 }
 
+interface AdBookingItem {
+  id: number;
+  slot: string;
+  advertiser_name: string;
+  advertiser_email: string;
+  title: string;
+  image_url: string;
+  link_url: string;
+  amount_cents: number;
+  status: string;
+  starts_at: string | null;
+  ends_at: string | null;
+  created_at: string | null;
+  rejected_reason: string | null;
+}
+
+interface AdSlotItem {
+  slot: string;
+  price_cents: number;
+  self_service_enabled: boolean;
+  occupied_until: string | null;
+  queue_length: number;
+}
+
+const SLOT_LABELS: Record<string, string> = {
+  home_top: 'Portada',
+  jobs_top: 'Trabajos',
+  pros_top: 'Profesionales',
+};
+
 export default function Admin() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [pendingKyc, setPendingKyc] = useState<KycItem[]>([]);
   const [allKyc, setAllKyc] = useState<KycItem[]>([]);
+  const [adBookings, setAdBookings] = useState<AdBookingItem[]>([]);
+  const [adSlots, setAdSlots] = useState<AdSlotItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<number | null>(null);
+  const [slotSaving, setSlotSaving] = useState<string | null>(null);
 
   useEffect(() => {
     client.auth.me()
@@ -49,12 +84,16 @@ export default function Admin() {
 
   const loadData = async () => {
     try {
-      const [pendingRes, allRes] = await Promise.all([
+      const [pendingRes, allRes, bookingsRes, slotsRes] = await Promise.all([
         client.apiCall.invoke('/api/v1/admin/kyc/pending', {}, 'GET'),
         client.apiCall.invoke('/api/v1/admin/kyc/all', {}, 'GET'),
+        client.apiCall.invoke('/api/v1/admin/ad-bookings', {}, 'GET'),
+        client.apiCall.invoke('/api/v1/admin/ad-slots', {}, 'GET'),
       ]);
       if (pendingRes?.data?.items) setPendingKyc(pendingRes.data.items);
       if (allRes?.data?.items) setAllKyc(allRes.data.items);
+      if (bookingsRes?.data) setAdBookings(bookingsRes.data);
+      if (slotsRes?.data) setAdSlots(slotsRes.data);
     } catch (err) {
       console.error('Error loading admin data:', err);
     }
@@ -78,6 +117,43 @@ export default function Admin() {
       toast.error('Error al procesar la acción');
     }
     setProcessing(null);
+  };
+
+  const handleBookingAction = async (bookingId: number, action: 'approve' | 'reject') => {
+    setProcessing(bookingId);
+    try {
+      if (action === 'approve') {
+        await client.apiCall.invoke(`/api/v1/admin/ad-bookings/${bookingId}/approve`, {}, 'POST');
+        toast.success('Anuncio aprobado');
+      } else {
+        const reason = window.prompt('Motivo del rechazo:');
+        if (reason === null) {
+          setProcessing(null);
+          return;
+        }
+        await client.apiCall.invoke(`/api/v1/admin/ad-bookings/${bookingId}/reject`, { reason }, 'POST');
+        toast.success('Anuncio rechazado');
+      }
+      loadData();
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+        'Error al procesar la reserva.';
+      toast.error(message);
+    }
+    setProcessing(null);
+  };
+
+  const handleUpdateSlot = async (slot: string, updates: { price_cents?: number; self_service_enabled?: boolean }) => {
+    setSlotSaving(slot);
+    try {
+      await client.apiCall.invoke(`/api/v1/admin/ad-slots/${slot}`, updates, 'PUT');
+      toast.success('Hueco actualizado');
+      loadData();
+    } catch {
+      toast.error('No se pudo actualizar el hueco');
+    }
+    setSlotSaving(null);
   };
 
   const statusBadge = (status: string) => {
@@ -155,6 +231,9 @@ export default function Admin() {
               </TabsTrigger>
               <TabsTrigger value="all" className="cursor-pointer">
                 Todas ({allKyc.length})
+              </TabsTrigger>
+              <TabsTrigger value="ads" className="cursor-pointer">
+                Publicidad ({adBookings.filter(b => b.status === 'pending_approval').length})
               </TabsTrigger>
             </TabsList>
 
@@ -283,6 +362,130 @@ export default function Admin() {
                   </CardContent>
                 </Card>
               )}
+            </TabsContent>
+
+            <TabsContent value="ads">
+              <div className="space-y-8">
+                <div>
+                  <h3 className="font-semibold mb-3" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                    Huecos publicitarios
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {adSlots.map((slot) => (
+                      <Card key={slot.slot} className="bg-white">
+                        <CardContent className="p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-sm">{SLOT_LABELS[slot.slot] || slot.slot}</span>
+                            {slot.occupied_until ? (
+                              <Badge className="bg-amber-100 text-amber-800">Ocupado</Badge>
+                            ) : (
+                              <Badge className="bg-emerald-100 text-emerald-800">Libre</Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Precio (€/30d):</span>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              defaultValue={(slot.price_cents / 100).toFixed(2)}
+                              className="h-8 w-24"
+                              disabled={slotSaving === slot.slot}
+                              onBlur={(e) => {
+                                const cents = Math.round(parseFloat(e.target.value) * 100);
+                                if (!Number.isNaN(cents) && cents !== slot.price_cents) {
+                                  handleUpdateSlot(slot.slot, { price_cents: cents });
+                                }
+                              }}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">Venta self-service</span>
+                            <Switch
+                              checked={slot.self_service_enabled}
+                              disabled={slotSaving === slot.slot}
+                              onCheckedChange={(checked) => handleUpdateSlot(slot.slot, { self_service_enabled: checked })}
+                            />
+                          </div>
+                          {slot.queue_length > 0 && (
+                            <p className="text-xs text-muted-foreground">{slot.queue_length} en cola</p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold mb-3" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                    Reservas de anunciantes
+                  </h3>
+                  {adBookings.length > 0 ? (
+                    <div className="space-y-3">
+                      {adBookings.map((b) => (
+                        <Card key={b.id} className="bg-white">
+                          <CardContent className="p-4">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <img src={b.image_url} alt={b.title} className="h-12 w-20 object-cover rounded-md bg-slate-100" />
+                                <div>
+                                  <p className="font-medium text-sm">{b.title}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {b.advertiser_name} ({b.advertiser_email}) · {SLOT_LABELS[b.slot] || b.slot} · {(b.amount_cents / 100).toFixed(2)} €
+                                  </p>
+                                  {b.status === 'rejected' && b.rejected_reason && (
+                                    <p className="text-xs text-red-600">{b.rejected_reason}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <Badge
+                                  className={
+                                    b.status === 'active' ? 'bg-emerald-100 text-emerald-800'
+                                    : b.status === 'pending_approval' ? 'bg-amber-100 text-amber-800'
+                                    : b.status === 'queued' ? 'bg-blue-100 text-blue-800'
+                                    : b.status === 'rejected' ? 'bg-red-100 text-red-800'
+                                    : 'bg-slate-100 text-slate-700'
+                                  }
+                                >
+                                  {b.status}
+                                </Badge>
+                                {b.status === 'pending_approval' && (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      disabled={processing === b.id}
+                                      className="bg-emerald-600 hover:bg-emerald-700 cursor-pointer"
+                                      onClick={() => handleBookingAction(b.id, 'approve')}
+                                    >
+                                      Aprobar
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      disabled={processing === b.id}
+                                      className="cursor-pointer"
+                                      onClick={() => handleBookingAction(b.id, 'reject')}
+                                    >
+                                      Rechazar
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <Card className="bg-white">
+                      <CardContent className="p-10 text-center">
+                        <Megaphone className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                        <p className="text-muted-foreground">Todavía no hay reservas de anuncios</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
         </div>

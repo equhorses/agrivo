@@ -6,7 +6,7 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, Zap, Crown, Rocket } from 'lucide-react';
+import { Check, Zap, Crown, Rocket, Loader2 } from 'lucide-react';
 import { VerifiedBadge, TopProBadge } from '@/components/Badges';
 import { toast } from 'sonner';
 import { PLANS } from '@/lib/constants';
@@ -19,29 +19,42 @@ const PLAN_ICONS: Record<string, any> = {
   enterprise: Rocket,
 };
 
+interface SubscriptionState {
+  subscription_status: string | null;
+  plan: string | null;
+  cancel_at_period_end: boolean | null;
+  subscription_end_date: string | null;
+}
+
 export default function Pricing() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
-  const [currentPlan, setCurrentPlan] = useState<string>('free');
+  const [subscription, setSubscription] = useState<SubscriptionState | null>(null);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const loadSubscription = async () => {
+    try {
+      const { data } = await client.payment.getMySubscription();
+      setSubscription(data);
+    } catch {
+      // Not logged in or request failed — treat as free/no subscription.
+    }
+  };
 
   useEffect(() => {
     client.auth.me()
       .then((res) => {
         if (res?.data) {
           setUser(res.data);
-          // Try to get current subscription
-          client.entities.subscriptions.queryMine({ limit: 1, sort: '-created_at' })
-            .then((subRes) => {
-              if (subRes?.data?.items?.[0]?.plan) {
-                setCurrentPlan(subRes.data.items[0].plan);
-              }
-            })
-            .catch(() => {});
+          loadSubscription();
         }
       })
       .catch(() => {});
   }, []);
+
+  const currentPlan = subscription?.plan || 'free';
+  const isActive = subscription?.subscription_status === 'active';
 
   const handleSubscribe = async (planId: string) => {
     if (!user) {
@@ -52,51 +65,64 @@ export default function Pricing() {
       toast.info('Ya tienes el plan básico activo');
       return;
     }
-    if (planId === currentPlan) {
+    if (planId === currentPlan && isActive) {
       toast.info('Ya estás suscrito a este plan');
       return;
     }
 
     setLoadingPlan(planId);
     try {
-      const plan = PLANS.find(p => p.id === planId);
-      const currentPlanData = PLANS.find(p => p.id === currentPlan);
-
-      // Calculate proration if upgrading
-      let finalAmount = (plan?.price || 0) * 100;
-      let description = `Plan ${plan?.name} - Agrivo`;
-
-      if (currentPlan !== 'free' && currentPlanData && plan) {
-        // Prorate: charge only the difference for the remaining period
-        const priceDiff = plan.price - currentPlanData.price;
-        if (priceDiff > 0) {
-          // Calculate remaining days in current billing period (assume 30-day month)
-          const today = new Date();
-          const daysRemaining = 30 - today.getDate();
-          const proratedAmount = Math.round((priceDiff * daysRemaining / 30) * 100);
-          finalAmount = proratedAmount;
-          description = `Upgrade a ${plan.name} (prorrateo ${daysRemaining} días restantes)`;
-        }
+      if (isActive) {
+        // Ya tiene una suscripción de pago activa: cambiamos el plan
+        // existente (Stripe prorratea automáticamente), sin crear un
+        // checkout ni una suscripción duplicada.
+        const { data } = await client.payment.changePlan(planId as 'pro' | 'enterprise');
+        setSubscription(data as SubscriptionState);
+        toast.success('Plan actualizado. El ajuste de precio se prorratea automáticamente.');
+      } else {
+        const { data } = await client.payment.createSubscriptionCheckout(planId as 'pro' | 'enterprise');
+        window.location.href = data.url;
       }
-
-      const res = await client.payment.createPaymentSession({
-        line_items: [
-          {
-            name: description,
-            amount: finalAmount,
-            quantity: 1,
-          },
-        ],
-        success_url: `${window.location.origin}/payment-success?plan=${planId}`,
-        cancel_url: `${window.location.origin}/precios`,
-      });
-      if (res?.data?.url) {
-        window.location.href = res.data.url;
-      }
-    } catch {
-      toast.error('Error al procesar el pago. Intenta de nuevo.');
+    } catch (err: unknown) {
+      console.error(err);
+      const message =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+        'Error al procesar el pago. Intenta de nuevo.';
+      toast.error(message);
     } finally {
       setLoadingPlan(null);
+    }
+  };
+
+  const handleCancel = async () => {
+    setActionLoading(true);
+    try {
+      const { data } = await client.payment.cancelSubscription();
+      setSubscription(data as SubscriptionState);
+      toast.success('Suscripción cancelada. Mantendrás el acceso hasta el final del período ya pagado.');
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+        'No se pudo cancelar la suscripción.';
+      toast.error(message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleResume = async () => {
+    setActionLoading(true);
+    try {
+      const { data } = await client.payment.resumeSubscription();
+      setSubscription(data as SubscriptionState);
+      toast.success('Suscripción reactivada.');
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+        'No se pudo reactivar la suscripción.';
+      toast.error(message);
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -136,13 +162,48 @@ export default function Pricing() {
           </div>
         </section>
 
+        {/* Subscription status */}
+        {user && subscription && (subscription.plan && subscription.plan !== 'free') && (
+          <section className="py-6 bg-white border-b">
+            <div className="container max-w-3xl">
+              <div className="p-5 rounded-xl border bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Tu suscripción</p>
+                  <p className="font-semibold">
+                    Plan {subscription.plan === 'enterprise' ? 'Empresa' : 'Profesional'} —{' '}
+                    {isActive ? (subscription.cancel_at_period_end ? 'se cancela al final del período' : 'activa') : 'inactiva'}
+                    {subscription.subscription_end_date && (
+                      <span className="text-muted-foreground font-normal">
+                        {' '}({new Date(subscription.subscription_end_date).toLocaleDateString('es-ES')})
+                      </span>
+                    )}
+                  </p>
+                </div>
+                {isActive && (
+                  subscription.cancel_at_period_end ? (
+                    <Button variant="outline" size="sm" disabled={actionLoading} onClick={handleResume} className="cursor-pointer">
+                      {actionLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
+                      Reactivar suscripción
+                    </Button>
+                  ) : (
+                    <Button variant="outline" size="sm" disabled={actionLoading} onClick={handleCancel} className="cursor-pointer">
+                      {actionLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
+                      Cancelar suscripción
+                    </Button>
+                  )
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Pricing Cards */}
         <section className="py-16 bg-slate-50">
           <div className="container">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
               {PLANS.map((plan) => {
                 const Icon = PLAN_ICONS[plan.id] || Zap;
-                const isCurrent = plan.id === currentPlan;
+                const isCurrent = plan.id === currentPlan && (plan.id === 'free' ? true : isActive);
                 return (
                   <Card
                     key={plan.id}
@@ -218,9 +279,15 @@ export default function Pricing() {
                         }`}
                         variant={plan.popular || plan.id === 'enterprise' ? 'default' : 'outline'}
                       >
-                        {isCurrent ? 'Plan Actual' : loadingPlan === plan.id ? 'Procesando...' : plan.cta}
+                        {isCurrent
+                          ? 'Plan Actual'
+                          : loadingPlan === plan.id
+                            ? 'Procesando...'
+                            : isActive && plan.price > 0
+                              ? 'Cambiar a este plan'
+                              : plan.cta}
                       </Button>
-                      {plan.price > 0 && currentPlan !== 'free' && currentPlan !== plan.id && (
+                      {plan.price > 0 && isActive && currentPlan !== plan.id && (
                         <p className="text-xs text-center text-muted-foreground">
                           * Se aplica prorrateo por los días restantes del ciclo actual
                         </p>

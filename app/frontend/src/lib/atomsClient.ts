@@ -124,21 +124,73 @@ export function createClient() {
       },
     },
 
-    // ⚠️ NO IMPLEMENTADO DE VERDAD TODAVÍA.
-    // El backend no tiene (aún) un router de pagos real conectado a Stripe
-    // (services/payment.py solo trae utilidades internas, sin endpoints
-    // públicos). Antes de usar la sección de precios/suscripción de pago,
-    // hay que construir ese router y sustituir esto por llamadas reales.
+    // Stripe real (routers/payments.py). Suscripciones Pro/Empresa: checkout
+    // recurrente + activación única, cancelar/reanudar/cambiar plan, y
+    // estado leído siempre del backend (nunca lo declara el propio frontend).
     payment: {
-      async createPaymentSession(_payload: Record<string, unknown>): Promise<{ data: { url: string } }> {
-        throw new Error(
-          'El pago con Stripe todavía no está conectado en el backend de Agrivo (falta el router de pagos).'
-        );
+      async createSubscriptionCheckout(plan: 'pro' | 'enterprise'): Promise<{ data: { url: string } }> {
+        const res = await http().post('/api/v1/payments/checkout', { plan });
+        return { data: res.data };
       },
-      async verifyPayment(_payload: Record<string, unknown>): Promise<{ data: unknown }> {
-        throw new Error(
-          'La verificación de pago todavía no está conectada en el backend de Agrivo (falta el router de pagos).'
-        );
+      async getMySubscription(): Promise<{
+        data: {
+          subscription_status: string | null;
+          plan: string | null;
+          cancel_at_period_end: boolean | null;
+          subscription_end_date: string | null;
+        };
+      }> {
+        const res = await http().get('/api/v1/payments/subscription/me');
+        return { data: res.data };
+      },
+      async cancelSubscription(): Promise<{ data: unknown }> {
+        const res = await http().post('/api/v1/payments/subscription/cancel');
+        return { data: res.data };
+      },
+      async resumeSubscription(): Promise<{ data: unknown }> {
+        const res = await http().post('/api/v1/payments/subscription/resume');
+        return { data: res.data };
+      },
+      async changePlan(plan: 'pro' | 'enterprise'): Promise<{ data: unknown }> {
+        const res = await http().post('/api/v1/payments/subscription/change-plan', { plan });
+        return { data: res.data };
+      },
+    },
+
+    // Anuncios self-service (routers/house_ads.py): huecos publicitarios que
+    // empresas externas pueden reservar y pagar, sujeto a aprobación manual.
+    houseAds: {
+      async getForSlot(slot: string): Promise<{
+        data: { slot: string; title: string; image_url: string; link_url: string } | null;
+      }> {
+        const res = await http().get(`/api/v1/house-ads/${slot}`);
+        return { data: res.data };
+      },
+      async listSlots(): Promise<{
+        data: Array<{
+          slot: string;
+          price_cents: number;
+          self_service_enabled: boolean;
+          occupied_until: string | null;
+          queue_length: number;
+        }>;
+      }> {
+        const res = await http().get('/api/v1/house-ads/slots');
+        return { data: res.data };
+      },
+      async bookSlot(payload: {
+        slot: string;
+        advertiser_name: string;
+        title: string;
+        image_url: string;
+        link_url: string;
+      }): Promise<{ data: { url: string } }> {
+        const res = await http().post('/api/v1/house-ads/book', payload);
+        return { data: res.data };
+      },
+      async myBookings(): Promise<{ data: unknown[] }> {
+        const res = await http().get('/api/v1/house-ads/my-bookings');
+        return { data: res.data };
       },
     },
 
