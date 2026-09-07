@@ -4,12 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import Layout from '@/components/Layout';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { toast } from 'sonner';
 import { authApi } from '@/lib/auth';
 import { getAPIBaseURL } from '@/lib/config';
 import { Gift } from 'lucide-react';
-import { INVITE_TOKEN_STORAGE_KEY } from '@/components/ComingSoonGate';
+
+// Clave usada para recordar un token de invitación pendiente entre pasos del
+// login/registro. Agrivo no tiene una puerta de "Coming Soon" (a diferencia
+// de VentaCofrade), así que esto vive aquí en vez de en un componente aparte.
+const INVITE_TOKEN_STORAGE_KEY = 'agrivo_pending_invite_token';
 
 const HCAPTCHA_SITE_KEY = import.meta.env.VITE_HCAPTCHA_SITE_KEY as string | undefined;
 const HCAPTCHA_SCRIPT_ID = 'hcaptcha-script';
@@ -193,7 +198,9 @@ export default function LoginPage() {
   };
 
   return (
-    <Layout>
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1">
       <div className="max-w-md mx-auto px-4 py-16">
         <Card>
           <CardHeader>
@@ -332,6 +339,8 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+      </main>
+      <Footer />
+    </div>
   );
 }
