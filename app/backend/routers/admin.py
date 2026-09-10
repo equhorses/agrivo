@@ -1,22 +1,34 @@
 # @File: backend/routers/admin.py
 # @Desc: Admin panel API for KYC verification management
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func
 from typing import Optional, List
 
 from core.database import get_db
-from dependencies.auth import get_current_user, require_roles
+from dependencies.auth import (
+    get_current_user, get_admin_user, get_staff_user, require_roles, STAFF_ROLES, ROLE_LABELS,
+)
 from schemas.auth import UserResponse
 from models.kyc_verifications import Kyc_verifications as KycVerifications
+from models.auth import User
 from models.house_ads import HouseAds
 from models.ad_bookings import AdBooking
 from models.ad_slot_configs import AdSlotConfig
+from models.subscriptions import Subscriptions
+from models.jobs import Jobs
+from models.bids import Bids
+from models.reviews import Reviews
+from models.profiles import Profiles
+from models.disputes import Disputes
+from models.messages import Messages
+from models.audit import AuditLog, LoginAttempt
 from services.audit import log_admin_action
 from services.house_ad_bookings import AdBookingsService
+from services.user import purge_user_completely
 from routers.house_ads import KNOWN_SLOTS
 from services.email_service import send_email, kyc_approved_email, kyc_rejected_email
 
@@ -414,3 +426,695 @@ async def update_ad_slot(
     return AdSlotAdminResponse(
         slot=config.slot, price_cents=config.price_cents, self_service_enabled=config.self_service_enabled,
     )
+
+# ==================== Resumen (dashboard) ====================
+
+PLAN_PRICES_EUR = {"pro": 19, "enterprise": 29}
+
+
+class DashboardStats(BaseModel):
+    users_total: int
+    users_last_7_days: int
+    professionals_total: int
+    active_subscriptions: int
+    mrr_estimate_eur: float
+    jobs_total: int
+    jobs_active: int
+    messages_total: int
+    reviews_total: int
+    disputes_open: int
+    kyc_pending: int
+    ad_bookings_active: int
+
+
+@router.get("/dashboard", response_model=DashboardStats)
+async def get_dashboard(
+    current_user: UserResponse = Depends(get_staff_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Vista general de Agrivo, al minuto — la pestaña 'Resumen' del panel."""
+    now = datetime.now(timezone.utc)
+    seven_days_ago = now - timedelta(days=7)
+
+    users_total = (await db.execute(select(func.count()).select_from(User))).scalar_one()
+    users_recent = (
+        await db.execute(select(func.count()).select_from(User).where(User.created_at >= seven_days_ago))
+    ).scalar_one()
+    professionals_total = (
+        await db.execute(select(func.count()).select_from(Profiles).where(Profiles.role == "professional"))
+    ).scalar_one()
+
+    active_subs_result = await db.execute(select(Subscriptions).where(Subscriptions.status == "active"))
+    active_subs = active_subs_result.scalars().all()
+    mrr = sum(PLAN_PRICES_EUR.get(s.plan, 0) for s in active_subs)
+
+    jobs_total = (await db.execute(select(func.count()).select_from(Jobs))).scalar_one()
+    jobs_active = (
+        await db.execute(select(func.count()).select_from(Jobs).where(Jobs.status == "open"))
+    ).scalar_one()
+    messages_total = (await db.execute(select(func.count()).select_from(Messages))).scalar_one()
+    reviews_total = (await db.execute(select(func.count()).select_from(Reviews))).scalar_one()
+    disputes_open = (
+        await db.execute(select(func.count()).select_from(Disputes).where(Disputes.status != "resolved"))
+    ).scalar_one()
+    kyc_pending = (
+        await db.execute(select(func.count()).select_from(KycVerifications).where(KycVerifications.status == "pending"))
+    ).scalar_one()
+
+    active_bookings_result = await db.execute(select(AdBooking).where(AdBooking.status == "active"))
+    ad_bookings_active = len(active_bookings_result.scalars().all())
+
+    return DashboardStats(
+        users_total=users_total,
+        users_last_7_days=users_recent,
+        professionals_total=professionals_total,
+        active_subscriptions=len(active_subs),
+        mrr_estimate_eur=float(mrr),
+        jobs_total=jobs_total,
+        jobs_active=jobs_active,
+        messages_total=messages_total,
+        reviews_total=reviews_total,
+        disputes_open=disputes_open,
+        kyc_pending=kyc_pending,
+        ad_bookings_active=ad_bookings_active,
+    )
+
+
+# ==================== Usuarios ====================
+
+
+class AdminUserResponse(BaseModel):
+    id: str
+    email: str
+    name: Optional[str] = None
+    role: str
+    account_status: str
+    created_at: Optional[datetime] = None
+    last_login: Optional[datetime] = None
+    plan: Optional[str] = None
+    subscription_status: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class AdminUsersListResponse(BaseModel):
+    items: List[AdminUserResponse]
+    total: int
+
+
+class BanUserRequest(BaseModel):
+    reason: Optional[str] = None
+
+
+@router.get("/users", response_model=AdminUsersListResponse)
+async def list_users(
+    search: Optional[str] = Query(None, description="Filtra por email o nombre"),
+    status_filter: Optional[str] = Query(None, alias="status", description="active | suspended | banned | pending_deletion"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    current_user: UserResponse = Depends(get_staff_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Lista toda cuenta de usuario, no solo profesionales. Visible a
+    cualquier rol de staff. Incluye, por usuario, su plan y estado de
+    suscripción si lo tiene."""
+    query = select(User)
+    count_query = select(func.count()).select_from(User)
+
+    if search:
+        like = f"%{search.strip().lower()}%"
+        query = query.where((User.email.ilike(like)) | (User.name.ilike(like)))
+        count_query = count_query.where((User.email.ilike(like)) | (User.name.ilike(like)))
+
+    if status_filter:
+        query = query.where(User.account_status == status_filter)
+        count_query = count_query.where(User.account_status == status_filter)
+
+    total = (await db.execute(count_query)).scalar_one()
+
+    query = query.order_by(User.created_at.desc()).offset(skip).limit(limit)
+    result = await db.execute(query)
+    users = result.scalars().all()
+
+    user_ids = [u.id for u in users]
+    subs_by_user_id = {}
+    if user_ids:
+        subs_result = await db.execute(select(Subscriptions).where(Subscriptions.user_id.in_(user_ids)))
+        subs_by_user_id = {s.user_id: s for s in subs_result.scalars().all()}
+
+    items = [
+        AdminUserResponse(
+            id=u.id, email=u.email, name=u.name, role=u.role, account_status=u.account_status,
+            created_at=u.created_at, last_login=u.last_login,
+            plan=(subs_by_user_id.get(u.id).plan if subs_by_user_id.get(u.id) else None),
+            subscription_status=(subs_by_user_id.get(u.id).status if subs_by_user_id.get(u.id) else None),
+        )
+        for u in users
+    ]
+    return AdminUsersListResponse(items=items, total=total)
+
+
+@router.post("/users/{user_id}/ban", response_model=AdminUserResponse)
+async def ban_user(
+    user_id: str,
+    payload: BanUserRequest,
+    current_user: UserResponse = Depends(require_roles("admin", "seguridad")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Banea una cuenta — bloquea el login hasta que un admin lo levante."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if user.role in STAFF_ROLES:
+        raise HTTPException(status_code=400, detail="No puedes banear a una cuenta del equipo.")
+
+    user.account_status = "banned"
+    user.suspended_at = datetime.now(timezone.utc)
+    if payload.reason:
+        user.deletion_reasons = payload.reason
+    await db.commit()
+    await db.refresh(user)
+
+    await log_admin_action(
+        db, current_user.id, current_user.email, "ban_user", target=user.email, details=payload.reason
+    )
+    return user
+
+
+@router.post("/users/{user_id}/unban", response_model=AdminUserResponse)
+async def unban_user(
+    user_id: str,
+    current_user: UserResponse = Depends(require_roles("admin", "seguridad")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Levanta un baneo, restaurando el acceso normal."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    user.account_status = "active"
+    user.suspended_at = None
+    await db.commit()
+    await db.refresh(user)
+
+    await log_admin_action(db, current_user.id, current_user.email, "unban_user", target=user.email)
+    return user
+
+
+class DeleteUserResponse(BaseModel):
+    deleted_email: str
+
+
+@router.delete("/users/{user_id}", response_model=DeleteUserResponse)
+async def delete_user_admin(
+    user_id: str,
+    current_user: UserResponse = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Borra una cuenta de forma permanente e inmediata (a diferencia del
+    autoborrado del propio usuario, que espera 5 años). Solo admin."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if user.role in STAFF_ROLES:
+        raise HTTPException(status_code=400, detail="No puedes borrar a una cuenta del equipo.")
+
+    email = user.email
+    await purge_user_completely(db, user_id)
+    await log_admin_action(db, current_user.id, current_user.email, "delete_user", target=email)
+    return DeleteUserResponse(deleted_email=email)
+
+
+# ==================== Trabajos (moderación) ====================
+
+
+class AdminJobResponse(BaseModel):
+    id: int
+    title: str
+    category: str
+    country: str
+    location: str
+    status: Optional[str] = None
+    user_id: str
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/jobs", response_model=List[AdminJobResponse])
+async def list_jobs_admin(
+    search: Optional[str] = Query(None),
+    status_filter: Optional[str] = Query(None, alias="status"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    current_user: UserResponse = Depends(get_staff_user),
+    db: AsyncSession = Depends(get_db),
+):
+    query = select(Jobs).order_by(Jobs.created_at.desc())
+    if search:
+        query = query.where(Jobs.title.ilike(f"%{search.strip()}%"))
+    if status_filter:
+        query = query.where(Jobs.status == status_filter)
+    result = await db.execute(query.offset(skip).limit(limit))
+    return result.scalars().all()
+
+
+@router.post("/jobs/{job_id}/remove", response_model=AdminJobResponse)
+async def remove_job_admin(
+    job_id: int,
+    current_user: UserResponse = Depends(require_roles("admin", "moderacion")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retira un trabajo de la vista pública (p.ej. por incumplir normas)."""
+    result = await db.execute(select(Jobs).where(Jobs.id == job_id))
+    job = result.scalar_one_or_none()
+    if not job:
+        raise HTTPException(status_code=404, detail="Trabajo no encontrado")
+    job.status = "removed"
+    await db.commit()
+    await db.refresh(job)
+    await log_admin_action(db, current_user.id, current_user.email, "remove_job", target=str(job_id), details=job.title)
+    return job
+
+
+@router.post("/jobs/{job_id}/restore", response_model=AdminJobResponse)
+async def restore_job_admin(
+    job_id: int,
+    current_user: UserResponse = Depends(require_roles("admin", "moderacion")),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Jobs).where(Jobs.id == job_id))
+    job = result.scalar_one_or_none()
+    if not job:
+        raise HTTPException(status_code=404, detail="Trabajo no encontrado")
+    job.status = "open"
+    await db.commit()
+    await db.refresh(job)
+    await log_admin_action(db, current_user.id, current_user.email, "restore_job", target=str(job_id), details=job.title)
+    return job
+
+
+@router.delete("/jobs/{job_id}")
+async def delete_job_admin(
+    job_id: int,
+    current_user: UserResponse = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Jobs).where(Jobs.id == job_id))
+    job = result.scalar_one_or_none()
+    if not job:
+        raise HTTPException(status_code=404, detail="Trabajo no encontrado")
+    title = job.title
+    await db.delete(job)
+    await db.commit()
+    await log_admin_action(db, current_user.id, current_user.email, "delete_job", target=str(job_id), details=title)
+    return {"success": True}
+
+
+# ==================== Reseñas (moderación) ====================
+
+
+class AdminReviewResponse(BaseModel):
+    id: int
+    professional_id: str
+    rating: int
+    comment: str
+    reviewer_name: Optional[str] = None
+    user_id: str
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/reviews", response_model=List[AdminReviewResponse])
+async def list_reviews_admin(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    current_user: UserResponse = Depends(get_staff_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Reviews).order_by(Reviews.created_at.desc()).offset(skip).limit(limit))
+    return result.scalars().all()
+
+
+@router.delete("/reviews/{review_id}")
+async def delete_review_admin(
+    review_id: int,
+    current_user: UserResponse = Depends(require_roles("admin", "moderacion")),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Reviews).where(Reviews.id == review_id))
+    review = result.scalar_one_or_none()
+    if not review:
+        raise HTTPException(status_code=404, detail="Reseña no encontrada")
+    await db.delete(review)
+    await db.commit()
+    await log_admin_action(db, current_user.id, current_user.email, "delete_review", target=str(review_id))
+    return {"success": True}
+
+
+# ==================== Profesionales ====================
+
+
+class AdminProfessionalResponse(BaseModel):
+    id: int
+    display_name: str
+    role: str
+    country: Optional[str] = None
+    rating: Optional[float] = None
+    jobs_completed: Optional[int] = None
+    verified_kyc: Optional[bool] = None
+    user_id: str
+    email: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/professionals", response_model=List[AdminProfessionalResponse])
+async def list_professionals_admin(
+    search: Optional[str] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    current_user: UserResponse = Depends(get_staff_user),
+    db: AsyncSession = Depends(get_db),
+):
+    query = select(Profiles).where(Profiles.role == "professional").order_by(Profiles.created_at.desc())
+    if search:
+        query = query.where(Profiles.display_name.ilike(f"%{search.strip()}%"))
+    result = await db.execute(query.offset(skip).limit(limit))
+    profiles = result.scalars().all()
+
+    user_ids = [p.user_id for p in profiles]
+    emails_by_user_id = {}
+    if user_ids:
+        users_result = await db.execute(select(User).where(User.id.in_(user_ids)))
+        emails_by_user_id = {u.id: u.email for u in users_result.scalars().all()}
+
+    return [
+        AdminProfessionalResponse(
+            id=p.id, display_name=p.display_name, role=p.role, country=p.country, rating=p.rating,
+            jobs_completed=p.jobs_completed, verified_kyc=p.verified_kyc, user_id=p.user_id,
+            email=emails_by_user_id.get(p.user_id),
+        )
+        for p in profiles
+    ]
+
+
+# ==================== Seguridad ====================
+
+
+class SecurityOverview(BaseModel):
+    failed_logins_24h: int
+    banned_users: int
+    recent_attempts: List[dict]
+
+
+@router.get("/security", response_model=SecurityOverview)
+async def get_security_overview(
+    current_user: UserResponse = Depends(require_roles("admin", "seguridad")),
+    db: AsyncSession = Depends(get_db),
+):
+    now = datetime.now(timezone.utc)
+    day_ago = now - timedelta(hours=24)
+
+    failed_result = await db.execute(
+        select(func.count()).select_from(LoginAttempt)
+        .where(LoginAttempt.success.is_(False), LoginAttempt.created_at >= day_ago)
+    )
+    failed_logins_24h = failed_result.scalar_one()
+
+    banned_result = await db.execute(select(func.count()).select_from(User).where(User.account_status == "banned"))
+    banned_users = banned_result.scalar_one()
+
+    recent_result = await db.execute(select(LoginAttempt).order_by(LoginAttempt.created_at.desc()).limit(30))
+    recent_attempts = [
+        {
+            "email": a.email, "method": a.method, "success": a.success, "reason": a.reason,
+            "ip_address": a.ip_address, "created_at": a.created_at.isoformat() if a.created_at else None,
+        }
+        for a in recent_result.scalars().all()
+    ]
+
+    return SecurityOverview(
+        failed_logins_24h=failed_logins_24h, banned_users=banned_users, recent_attempts=recent_attempts
+    )
+
+
+# ==================== Auditoría ====================
+
+
+class AuditLogEntry(BaseModel):
+    id: int
+    actor_email: Optional[str] = None
+    action: str
+    target: Optional[str] = None
+    details: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/audit-log", response_model=List[AuditLogEntry])
+async def get_audit_log(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    current_user: UserResponse = Depends(get_staff_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(AuditLog).order_by(AuditLog.created_at.desc()).offset(skip).limit(limit))
+    return result.scalars().all()
+
+
+# ==================== Equipo (staff) ====================
+
+
+class StaffMemberResponse(BaseModel):
+    id: str
+    email: str
+    name: Optional[str] = None
+    role: str
+    role_label: str
+
+    class Config:
+        from_attributes = True
+
+
+class AssignRoleRequest(BaseModel):
+    email: str
+    role: str
+
+
+@router.get("/staff", response_model=List[StaffMemberResponse])
+async def list_staff(
+    current_user: UserResponse = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(User).where(User.role.in_(STAFF_ROLES)).order_by(User.role))
+    users = result.scalars().all()
+    return [
+        StaffMemberResponse(
+            id=u.id, email=u.email, name=u.name, role=u.role, role_label=ROLE_LABELS.get(u.role, u.role)
+        )
+        for u in users
+    ]
+
+
+@router.post("/staff/assign-role", response_model=StaffMemberResponse)
+async def assign_staff_role(
+    payload: AssignRoleRequest,
+    current_user: UserResponse = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Da (o quita, con role='user') un rol de staff a una cuenta ya
+    existente — la persona debe haberse registrado antes en Agrivo."""
+    if payload.role not in STAFF_ROLES and payload.role != "user":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Rol no válido. Usa uno de: {', '.join(sorted(STAFF_ROLES))} o 'user' para quitar el rol.",
+        )
+
+    result = await db.execute(select(User).where(User.email == payload.email.strip().lower()))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="No existe ninguna cuenta con ese email. La persona debe registrarse primero.")
+
+    old_role = user.role
+    user.role = payload.role
+    await db.commit()
+    await db.refresh(user)
+
+    await log_admin_action(
+        db, current_user.id, current_user.email, "assign_role",
+        target=user.email, details=f"{old_role} -> {payload.role}",
+    )
+    return StaffMemberResponse(
+        id=user.id, email=user.email, name=user.name, role=user.role,
+        role_label=ROLE_LABELS.get(user.role, user.role),
+    )
+
+
+# ==================== Pujas (subastas) ====================
+
+
+class AdminBidResponse(BaseModel):
+    id: int
+    job_id: int
+    job_title: Optional[str] = None
+    amount: float
+    message: Optional[str] = None
+    status: Optional[str] = None
+    user_id: str
+    bidder_email: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/bids", response_model=List[AdminBidResponse])
+async def list_bids_admin(
+    job_id: Optional[int] = Query(None, description="Filtra las pujas de un trabajo concreto"),
+    status_filter: Optional[str] = Query(None, alias="status"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    current_user: UserResponse = Depends(get_staff_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Registro completo de pujas del sistema de subastas: qué se ha
+    ofertado, en qué trabajo, por quién y en qué estado. Filtrable por
+    trabajo o por estado (pending/accepted/rejected)."""
+    query = select(Bids).order_by(Bids.created_at.desc())
+    if job_id is not None:
+        query = query.where(Bids.job_id == job_id)
+    if status_filter:
+        query = query.where(Bids.status == status_filter)
+    result = await db.execute(query.offset(skip).limit(limit))
+    bids = result.scalars().all()
+
+    job_ids = {b.job_id for b in bids}
+    jobs_by_id = {}
+    if job_ids:
+        jobs_result = await db.execute(select(Jobs).where(Jobs.id.in_(job_ids)))
+        jobs_by_id = {j.id: j.title for j in jobs_result.scalars().all()}
+
+    user_ids = [b.user_id for b in bids]
+    emails_by_user_id = {}
+    if user_ids:
+        users_result = await db.execute(select(User).where(User.id.in_(user_ids)))
+        emails_by_user_id = {u.id: u.email for u in users_result.scalars().all()}
+
+    return [
+        AdminBidResponse(
+            id=b.id, job_id=b.job_id, job_title=jobs_by_id.get(b.job_id), amount=b.amount,
+            message=b.message, status=b.status, user_id=b.user_id,
+            bidder_email=emails_by_user_id.get(b.user_id), created_at=b.created_at,
+        )
+        for b in bids
+    ]
+
+
+@router.post("/bids/{bid_id}/cancel", response_model=AdminBidResponse)
+async def cancel_bid_admin(
+    bid_id: int,
+    current_user: UserResponse = Depends(require_roles("admin", "moderacion")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Anula una puja (p.ej. sospecha de fraude o puja abusiva) sin
+    borrarla del registro — queda marcada como 'cancelled'."""
+    result = await db.execute(select(Bids).where(Bids.id == bid_id))
+    bid = result.scalar_one_or_none()
+    if not bid:
+        raise HTTPException(status_code=404, detail="Puja no encontrada")
+    bid.status = "cancelled"
+    await db.commit()
+    await db.refresh(bid)
+    await log_admin_action(
+        db, current_user.id, current_user.email, "cancel_bid",
+        target=str(bid_id), details=f"job_id={bid.job_id}, amount={bid.amount}",
+    )
+    return bid
+
+
+@router.delete("/bids/{bid_id}")
+async def delete_bid_admin(
+    bid_id: int,
+    current_user: UserResponse = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Bids).where(Bids.id == bid_id))
+    bid = result.scalar_one_or_none()
+    if not bid:
+        raise HTTPException(status_code=404, detail="Puja no encontrada")
+    details = f"job_id={bid.job_id}, amount={bid.amount}"
+    await db.delete(bid)
+    await db.commit()
+    await log_admin_action(db, current_user.id, current_user.email, "delete_bid", target=str(bid_id), details=details)
+    return {"success": True}
+
+
+# ==================== Disputas ====================
+
+
+class AdminDisputeResponse(BaseModel):
+    id: int
+    job_title: str
+    reason: str
+    description: str
+    amount_disputed: Optional[float] = None
+    status: str
+    resolution: Optional[str] = None
+    user_id: str
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ResolveDisputeRequest(BaseModel):
+    resolution: str
+    status: str = "resolved"  # resolved | rejected
+
+
+@router.get("/disputes", response_model=List[AdminDisputeResponse])
+async def list_disputes_admin(
+    status_filter: Optional[str] = Query(None, alias="status"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    current_user: UserResponse = Depends(get_staff_user),
+    db: AsyncSession = Depends(get_db),
+):
+    query = select(Disputes).order_by(Disputes.created_at.desc())
+    if status_filter:
+        query = query.where(Disputes.status == status_filter)
+    result = await db.execute(query.offset(skip).limit(limit))
+    return result.scalars().all()
+
+
+@router.post("/disputes/{dispute_id}/resolve", response_model=AdminDisputeResponse)
+async def resolve_dispute_admin(
+    dispute_id: int,
+    payload: ResolveDisputeRequest,
+    current_user: UserResponse = Depends(require_roles("admin", "moderacion")),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Disputes).where(Disputes.id == dispute_id))
+    dispute = result.scalar_one_or_none()
+    if not dispute:
+        raise HTTPException(status_code=404, detail="Disputa no encontrada")
+    dispute.status = payload.status
+    dispute.resolution = payload.resolution
+    await db.commit()
+    await db.refresh(dispute)
+    await log_admin_action(
+        db, current_user.id, current_user.email, "resolve_dispute",
+        target=str(dispute_id), details=f"{payload.status}: {payload.resolution}",
+    )
+    return dispute
