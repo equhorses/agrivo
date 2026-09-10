@@ -104,8 +104,8 @@ export function createClient() {
         localStorage.removeItem(TOKEN_KEY);
         window.location.href = '/login';
       },
-      toLogin() {
-        window.location.href = '/login';
+      toLogin(mode?: 'login' | 'register') {
+        window.location.href = mode ? `/login?mode=${mode}` : '/login';
       },
     },
 

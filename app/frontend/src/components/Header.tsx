@@ -40,8 +40,8 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleLogin = () => {
-    client.auth.toLogin();
+  const handleLogin = (mode?: 'login' | 'register') => {
+    client.auth.toLogin(mode);
   };
 
   const handleLogout = async () => {
@@ -152,10 +152,10 @@ export default function Header() {
             </DropdownMenu>
           ) : (
             <>
-              <Button variant="ghost" onClick={handleLogin} className="cursor-pointer text-sm">
+              <Button variant="ghost" onClick={() => handleLogin('login')} className="cursor-pointer text-sm">
                 {t('nav.login', locale)}
               </Button>
-              <Button onClick={handleLogin} className="cursor-pointer text-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700">
+              <Button onClick={() => handleLogin('register')} className="cursor-pointer text-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700">
                 {t('nav.register', locale)}
               </Button>
             </>
@@ -225,7 +225,7 @@ export default function Header() {
                   </Button>
                 </>
               ) : (
-                <Button onClick={handleLogin} className="mt-2 cursor-pointer bg-gradient-to-r from-emerald-600 to-teal-600">
+                <Button onClick={() => handleLogin()} className="mt-2 cursor-pointer bg-gradient-to-r from-emerald-600 to-teal-600">
                   {t('nav.login', locale)} / {t('nav.register', locale)}
                 </Button>
               )}
