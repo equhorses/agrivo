@@ -100,6 +100,9 @@ export function createClient() {
         const res = await http().get('/api/v1/auth/me');
         return { data: res.data };
       },
+      setToken(token: string) {
+        localStorage.setItem(TOKEN_KEY, token);
+      },
       async logout() {
         localStorage.removeItem(TOKEN_KEY);
         window.location.href = '/login';

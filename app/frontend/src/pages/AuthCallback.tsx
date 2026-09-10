@@ -1,16 +1,25 @@
 import { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createClient } from '@/lib/atomsClient';
 
 const client = createClient();
 
 export default function AuthCallback() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const attempted = useRef(false);
 
   useEffect(() => {
     if (attempted.current) return;
     attempted.current = true;
+
+    // El backend nos manda el token de sesión como query param tras el
+    // login con Google (routers/auth.py:google_callback) — hay que
+    // guardarlo antes de comprobar nada, o /auth/me siempre dará 401.
+    const token = searchParams.get('token');
+    if (token) {
+      client.auth.setToken(token);
+    }
 
     // Retry auth check a few times since session may take a moment to propagate
     let retries = 0;
@@ -40,7 +49,7 @@ export default function AuthCallback() {
 
     // Small initial delay to allow session to be established
     setTimeout(checkAuth, 500);
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
