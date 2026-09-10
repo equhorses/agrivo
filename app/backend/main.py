@@ -250,9 +250,15 @@ if __name__ == "__main__":
         run_in_debug_mode(app)
     else:
         # Enable reload in normal mode
+        # proxy_headers + forwarded_allow_ips: Railway terminates TLS in front
+        # of this process, so without trusting X-Forwarded-Proto uvicorn sees
+        # plain http:// and any code building an absolute URL from the
+        # request (e.g. the Google OAuth redirect_uri) ends up wrong.
         uvicorn.run(
             app,
             host="0.0.0.0",
             port=int(settings.port),
             reload_excludes=["**/*.py"],
+            proxy_headers=True,
+            forwarded_allow_ips="*",
         )
