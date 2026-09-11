@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { COUNTRIES, CATEGORIES } from '@/lib/constants';
@@ -29,7 +30,9 @@ export default function CreateJob() {
     budget_min: '',
     budget_max: '',
     contract_type: 'reverse_auction',
+    bidding_ends_at: '',
   });
+  const [noDeadline, setNoDeadline] = useState(true);
 
   useEffect(() => {
     client.auth.me()
@@ -51,6 +54,10 @@ export default function CreateJob() {
       toast.error('Completa todos los campos obligatorios');
       return;
     }
+    if (!noDeadline && !form.bidding_ends_at) {
+      toast.error('Indica una fecha límite o marca "Sin fecha límite"');
+      return;
+    }
     setSubmitting(true);
     try {
       await client.entities.jobs.create({
@@ -65,6 +72,9 @@ export default function CreateJob() {
           budget_max: form.budget_max ? Number(form.budget_max) : Number(form.budget_min),
           contract_type: form.contract_type,
           status: 'open',
+          bidding_ends_at: noDeadline || !form.bidding_ends_at
+            ? null
+            : new Date(form.bidding_ends_at).toISOString(),
         },
       });
       toast.success('¡Trabajo publicado exitosamente!');
@@ -177,6 +187,30 @@ export default function CreateJob() {
                       className="mt-1"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <Label>Fecha límite para recibir ofertas</Label>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Checkbox
+                      id="no-deadline"
+                      checked={noDeadline}
+                      onCheckedChange={(checked) => setNoDeadline(checked === true)}
+                    />
+                    <Label htmlFor="no-deadline" className="font-normal cursor-pointer">
+                      Sin fecha límite (queda abierto hasta que lo cierres tú)
+                    </Label>
+                  </div>
+                  {!noDeadline && (
+                    <Input
+                      id="bidding_ends_at"
+                      type="datetime-local"
+                      min={new Date().toISOString().slice(0, 16)}
+                      value={form.bidding_ends_at}
+                      onChange={(e) => updateField('bidding_ends_at', e.target.value)}
+                      className="mt-2"
+                    />
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

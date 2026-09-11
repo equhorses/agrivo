@@ -35,6 +35,7 @@ class JobsData(BaseModel):
     budget_max: float = None
     contract_type: str
     status: str = None
+    bidding_ends_at: Optional[datetime] = None  # NULL = sin límite de tiempo
 
 
 class JobsUpdateData(BaseModel):
@@ -49,6 +50,7 @@ class JobsUpdateData(BaseModel):
     budget_max: Optional[float] = None
     contract_type: Optional[str] = None
     status: Optional[str] = None
+    bidding_ends_at: Optional[datetime] = None
 
 
 class JobsResponse(BaseModel):
@@ -64,6 +66,7 @@ class JobsResponse(BaseModel):
     budget_max: Optional[float] = None
     contract_type: str
     status: Optional[str] = None
+    bidding_ends_at: Optional[datetime] = None
     user_id: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

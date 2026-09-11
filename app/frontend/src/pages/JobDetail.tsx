@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { createClient } from '@/lib/atomsClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -10,22 +10,36 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Calendar, Ruler, DollarSign, Send, ArrowLeft, User } from 'lucide-react';
+import { MapPin, Calendar, Clock, Ruler, DollarSign, Send, ArrowLeft, User, Check, X, Plus } from 'lucide-react';
 import { toast } from 'sonner';
-import { COUNTRIES } from '@/lib/constants';
+import { COUNTRIES, SEED_JOBS } from '@/lib/constants';
 
 const client = createClient();
+
+const BID_STATUS_LABEL: Record<string, string> = {
+  pending: 'Pendiente',
+  accepted: 'Aceptada',
+  rejected: 'Rechazada',
+};
 
 export default function JobDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState<any>(null);
   const [bids, setBids] = useState<any[]>([]);
+  const [bidProfiles, setBidProfiles] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [bidAmount, setBidAmount] = useState('');
   const [bidMessage, setBidMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [decidingBidId, setDecidingBidId] = useState<number | null>(null);
+
+  // Los trabajos de ejemplo (SEED_JOBS) no existen en la base de datos —
+  // se usan solo para que la plataforma no se vea vacía mientras crece.
+  // Se pueden abrir y ver, pero no se puede pujar de verdad sobre ellos.
+  const seedJob = SEED_JOBS.find((j) => j.id === id);
+  const isSeedJob = !!seedJob;
 
   useEffect(() => {
     client.auth.me()
@@ -39,6 +53,11 @@ export default function JobDetail() {
   }, [id]);
 
   const loadJob = async () => {
+    if (seedJob) {
+      setJob(seedJob);
+      setLoading(false);
+      return;
+    }
     try {
       const res = await client.entities.jobs.queryAll({ query: { id: Number(id) }, limit: 1 });
       if (res?.data?.items?.[0]) {
@@ -52,17 +71,49 @@ export default function JobDetail() {
   };
 
   const loadBids = async () => {
+    if (isSeedJob) {
+      setBids([]);
+      return;
+    }
     try {
       const res = await client.entities.bids.queryAll({ query: { job_id: Number(id) }, sort: '-created_at' });
-      if (res?.data?.items) {
-        setBids(res.data.items);
-      }
+      const items = res?.data?.items || [];
+      setBids(items);
+
+      // Cargar el perfil de cada persona que pujó (para mostrar nombre y
+      // enlazar a su perfil público), uno por user_id distinto.
+      const uniqueUserIds: string[] = Array.from(new Set(items.map((b: any) => b.user_id).filter(Boolean)));
+      const profileEntries = await Promise.all(
+        uniqueUserIds.map(async (uid) => {
+          try {
+            const pRes = await client.entities.profiles.queryAll({ query: { user_id: uid }, limit: 1 });
+            return [uid, pRes?.data?.items?.[0] || null] as const;
+          } catch {
+            return [uid, null] as const;
+          }
+        })
+      );
+      setBidProfiles(Object.fromEntries(profileEntries));
     } catch {
       // Failed to load bids
     }
   };
 
+  const handleDecideBid = async (bidId: number, action: 'accept' | 'reject') => {
+    setDecidingBidId(bidId);
+    try {
+      await client.apiCall.invoke(`/api/v1/entities/bids/${bidId}/${action}`, {}, 'POST');
+      toast.success(action === 'accept' ? 'Oferta aceptada' : 'Oferta rechazada');
+      await Promise.all([loadJob(), loadBids()]);
+    } catch {
+      toast.error('No se pudo actualizar la oferta');
+    } finally {
+      setDecidingBidId(null);
+    }
+  };
+
   const handleSubmitBid = async () => {
+    if (isSeedJob) return; // por si acaso; la UI ya oculta el formulario
     if (!user) {
       client.auth.toLogin();
       return;
@@ -124,6 +175,9 @@ export default function JobDetail() {
   }
 
   const country = COUNTRIES.find(c => c.name === job.country);
+  const isOwner = !isSeedJob && !!user && !!job.user_id && user.id === job.user_id;
+  const deadlinePassed = !!job.bidding_ends_at && new Date(job.bidding_ends_at).getTime() < Date.now();
+  const canReceiveBids = !isSeedJob && job.status === 'open' && !deadlinePassed;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -143,6 +197,7 @@ export default function JobDetail() {
                 <CardContent className="p-8">
                   <div className="flex items-center gap-2 mb-4 flex-wrap">
                     {country && <img src={country.flag} alt={country.name} className="h-5 w-auto rounded-sm" />}
+                    {isSeedJob && <Badge variant="secondary">Ejemplo</Badge>}
                     <Badge variant="outline">{job.category}</Badge>
                     <Badge variant="outline">
                       {job.contract_type === 'reverse_auction' ? 'Subasta Inversa' : 'Precio Fijo'}
@@ -153,7 +208,7 @@ export default function JobDetail() {
                   </div>
                   <h1 className="text-2xl md:text-3xl mb-6">{job.title}</h1>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border">
                       <MapPin className="h-5 w-5 text-emerald-600" />
                       <div>
@@ -184,6 +239,17 @@ export default function JobDetail() {
                         </p>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border">
+                      <Clock className="h-5 w-5 text-emerald-600" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Cierre de ofertas</p>
+                        <p className={`text-sm font-medium ${deadlinePassed ? 'text-red-600' : ''}`}>
+                          {job.bidding_ends_at
+                            ? `${new Date(job.bidding_ends_at).toLocaleString('es')}${deadlinePassed ? ' (cerrado)' : ''}`
+                            : 'Sin límite de tiempo'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   <h3 className="text-lg mb-3" style={{ fontFamily: 'Poppins, sans-serif' }}>Descripción</h3>
@@ -204,27 +270,69 @@ export default function JobDetail() {
                 <CardContent>
                   {bids.length > 0 ? (
                     <div className="space-y-4">
-                      {bids.map((bid) => (
-                        <div key={bid.id} className="flex items-start gap-4 p-4 rounded-lg bg-slate-50 border">
-                          <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                            <User className="h-5 w-5 text-emerald-700" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-medium text-sm">Profesional</span>
-                              <span className="font-bold text-emerald-700" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                                ${bid.amount?.toLocaleString()} USD
-                              </span>
+                      {bids.map((bid) => {
+                        const profile = bidProfiles[bid.user_id];
+                        const bidderName = profile?.display_name || 'Profesional';
+                        const status = bid.status || 'pending';
+                        return (
+                          <div key={bid.id} className="flex items-start gap-4 p-4 rounded-lg bg-slate-50 border">
+                            <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                              <User className="h-5 w-5 text-emerald-700" />
                             </div>
-                            {bid.message && (
-                              <p className="text-sm text-muted-foreground mt-1">{bid.message}</p>
-                            )}
-                            <p className="text-xs text-muted-foreground mt-2">
-                              {bid.created_at ? new Date(bid.created_at).toLocaleDateString('es') : ''}
-                            </p>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                {profile ? (
+                                  <Link to={`/pros/${profile.id}`} className="font-medium text-sm hover:underline text-emerald-700">
+                                    {bidderName}
+                                  </Link>
+                                ) : (
+                                  <span className="font-medium text-sm">{bidderName}</span>
+                                )}
+                                <span className="font-bold text-emerald-700" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                                  ${bid.amount?.toLocaleString()} USD
+                                </span>
+                              </div>
+                              {bid.message && (
+                                <p className="text-sm text-muted-foreground mt-1">{bid.message}</p>
+                              )}
+                              <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
+                                <p className="text-xs text-muted-foreground">
+                                  {bid.created_at ? new Date(bid.created_at).toLocaleDateString('es') : ''}
+                                </p>
+                                <Badge
+                                  variant={status === 'accepted' ? 'default' : 'outline'}
+                                  className={status === 'accepted' ? 'bg-emerald-600 hover:bg-emerald-600' : status === 'rejected' ? 'text-muted-foreground' : ''}
+                                >
+                                  {BID_STATUS_LABEL[status] || status}
+                                </Badge>
+                              </div>
+                              {isOwner && status === 'pending' && (
+                                <div className="flex gap-2 mt-3">
+                                  <Button
+                                    size="sm"
+                                    disabled={decidingBidId === bid.id}
+                                    onClick={() => handleDecideBid(bid.id, 'accept')}
+                                    className="bg-emerald-600 hover:bg-emerald-700 cursor-pointer"
+                                  >
+                                    <Check className="h-4 w-4 mr-1" />
+                                    Aceptar
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={decidingBidId === bid.id}
+                                    onClick={() => handleDecideBid(bid.id, 'reject')}
+                                    className="cursor-pointer"
+                                  >
+                                    <X className="h-4 w-4 mr-1" />
+                                    Rechazar
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-center text-muted-foreground py-6">
@@ -242,7 +350,24 @@ export default function JobDetail() {
                   <CardTitle style={{ fontFamily: 'Poppins, sans-serif' }}>Enviar una oferta</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {job.status === 'open' ? (
+                  {isSeedJob ? (
+                    <div className="text-center py-4 space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        Esto es un trabajo de ejemplo para mostrar cómo funciona Agrivo — no puedes pujar aquí de verdad.
+                      </p>
+                      <Button
+                        onClick={() => navigate('/jobs/new')}
+                        className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 cursor-pointer"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Publicar un trabajo real
+                      </Button>
+                    </div>
+                  ) : isOwner ? (
+                    <p className="text-center text-muted-foreground py-4">
+                      Este es tu trabajo. Gestiona las ofertas recibidas a la izquierda.
+                    </p>
+                  ) : canReceiveBids ? (
                     <>
                       <div>
                         <Label htmlFor="bid-amount">Tu oferta (USD)</Label>
@@ -289,7 +414,7 @@ export default function JobDetail() {
                     </>
                   ) : (
                     <p className="text-center text-muted-foreground py-4">
-                      Este trabajo ya no acepta ofertas
+                      {deadlinePassed ? 'Se cerró el plazo para enviar ofertas' : 'Este trabajo ya no acepta ofertas'}
                     </p>
                   )}
 

@@ -162,11 +162,12 @@ export default function Jobs() {
                     const country = COUNTRIES.find(c => c.name === job.country);
                     const isSeed = job.seed;
                     return (
-                      <Link key={job.id} to={isSeed ? '#' : `/jobs/${job.id}`} className="cursor-pointer" onClick={(e) => { if (isSeed) { e.preventDefault(); } }}>
+                      <Link key={job.id} to={`/jobs/${job.id}`} className="cursor-pointer">
                         <Card className="hover:shadow-lg hover:border-emerald-200 transition-all h-full bg-white">
                           <CardContent className="p-6">
                             <div className="flex items-center gap-2 mb-3 flex-wrap">
                               {country && <img src={country.flag} alt={country.name} className="h-4 w-auto rounded-sm" />}
+                              {isSeed && <Badge variant="secondary" className="text-xs">Ejemplo</Badge>}
                               <Badge variant="outline" className="text-xs">{job.category}</Badge>
                               <Badge variant="outline" className="text-xs">
                                 {job.contract_type === 'reverse_auction' ? 'Subasta' : 'Fijo'}

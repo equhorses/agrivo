@@ -18,6 +18,8 @@ class Jobs(Base):
     budget_max = Column(Float, nullable=True)
     contract_type = Column(String, nullable=False)
     status = Column(String, nullable=True, default='open', server_default='open')
+    # Fecha límite para recibir ofertas. NULL = sin límite de tiempo.
+    bidding_ends_at = Column(DateTime(timezone=True), nullable=True)
     user_id = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), default=datetime.now)
     updated_at = Column(DateTime(timezone=True), default=datetime.now, onupdate=datetime.now)

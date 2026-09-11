@@ -6,12 +6,15 @@ from datetime import datetime, date
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from services.bids import BidsService
 from dependencies.auth import get_current_user
 from schemas.auth import UserResponse
+from models.jobs import Jobs
+from models.bids import Bids
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -289,6 +292,80 @@ async def update_bids(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Error updating bids {id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+async def _get_bid_and_owned_job(bid_id: int, current_user: UserResponse, db: AsyncSession) -> tuple[Bids, Jobs]:
+    """Carga la puja y su trabajo, comprobando que el usuario actual es el DUEÑO DEL TRABAJO
+    (no el de la puja: quien acepta/rechaza es quien publicó el trabajo)."""
+    bid_result = await db.execute(select(Bids).where(Bids.id == bid_id))
+    bid = bid_result.scalar_one_or_none()
+    if not bid:
+        raise HTTPException(status_code=404, detail="Oferta no encontrada")
+
+    job_result = await db.execute(select(Jobs).where(Jobs.id == bid.job_id))
+    job = job_result.scalar_one_or_none()
+    if not job:
+        raise HTTPException(status_code=404, detail="Trabajo no encontrado")
+
+    if job.user_id != str(current_user.id):
+        raise HTTPException(status_code=403, detail="Solo el dueño del trabajo puede gestionar esta oferta")
+
+    return bid, job
+
+
+@router.post("/{id}/accept", response_model=BidsResponse)
+async def accept_bid(
+    id: int,
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Acepta una oferta (solo el dueño del trabajo). Rechaza automáticamente
+    el resto de ofertas pendientes de ese mismo trabajo y lo marca en progreso."""
+    try:
+        bid, job = await _get_bid_and_owned_job(id, current_user, db)
+
+        bid.status = "accepted"
+        job.status = "in_progress"
+
+        others_result = await db.execute(
+            select(Bids).where(Bids.job_id == job.id, Bids.id != bid.id, Bids.status == "pending")
+        )
+        for other in others_result.scalars().all():
+            other.status = "rejected"
+
+        await db.commit()
+        await db.refresh(bid)
+        logger.info(f"Bid {id} accepted for job {job.id}")
+        return bid
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Error accepting bid {id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.post("/{id}/reject", response_model=BidsResponse)
+async def reject_bid(
+    id: int,
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Rechaza una oferta (solo el dueño del trabajo)."""
+    try:
+        bid, _job = await _get_bid_and_owned_job(id, current_user, db)
+
+        bid.status = "rejected"
+        await db.commit()
+        await db.refresh(bid)
+        logger.info(f"Bid {id} rejected")
+        return bid
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Error rejecting bid {id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
