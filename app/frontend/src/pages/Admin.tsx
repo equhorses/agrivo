@@ -71,6 +71,25 @@ interface InvitationItem {
   redeemed_at: string | null;
 }
 
+interface AdminConversation {
+  job_id: number;
+  job_title: string | null;
+  message_count: number;
+  last_message_at: string | null;
+  last_message_preview: string | null;
+}
+
+interface AdminMessage {
+  id: number;
+  job_id: number;
+  sender_id: string | null;
+  sender_email: string | null;
+  receiver_id: string | null;
+  receiver_email: string | null;
+  content: string;
+  created_at: string | null;
+}
+
 interface DashboardStats {
   users_total: number;
   users_last_7_days: number;
@@ -242,6 +261,10 @@ export default function Admin() {
   const [newInviteEmail, setNewInviteEmail] = useState('');
   const [newInvitePlan, setNewInvitePlan] = useState('pro');
   const [newInviteMonths, setNewInviteMonths] = useState(1);
+  const [conversations, setConversations] = useState<AdminConversation[]>([]);
+  const [openThreadJobId, setOpenThreadJobId] = useState<number | null>(null);
+  const [threadMessages, setThreadMessages] = useState<AdminMessage[]>([]);
+  const [threadLoading, setThreadLoading] = useState(false);
   const [slotSaving, setSlotSaving] = useState<string | null>(null);
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -280,6 +303,7 @@ export default function Admin() {
       ['/api/v1/admin/house-ads', (d: any) => d && setHouseAds(d)],
       ['/api/v1/admin/invitations', (d: any) => d && setInvitations(d)],
       ['/api/v1/admin/platform-settings', (d: any) => setLaunchDate(d?.launch_date ? d.launch_date.slice(0, 16) : '')],
+      ['/api/v1/admin/messages/conversations', (d: any) => d && setConversations(d)],
       ['/api/v1/admin/dashboard', (d: any) => d && setStats(d)],
       [`/api/v1/admin/users${search ? `?search=${encodeURIComponent(search)}` : ''}`, (d: any) => d?.items && setUsers(d.items)],
       ['/api/v1/admin/jobs', (d: any) => d && setJobs(d)],
@@ -431,6 +455,36 @@ export default function Admin() {
       loadData();
     } catch {
       toast.error('No se pudo guardar la fecha');
+    }
+    setProcessing(null);
+  };
+
+  const handleOpenThread = async (jobId: number) => {
+    if (openThreadJobId === jobId) {
+      setOpenThreadJobId(null);
+      return;
+    }
+    setOpenThreadJobId(jobId);
+    setThreadLoading(true);
+    try {
+      const res = await client.apiCall.invoke(`/api/v1/admin/messages/job/${jobId}`, {}, 'GET');
+      setThreadMessages(res?.data || []);
+    } catch {
+      toast.error('No se pudo cargar la conversación');
+    }
+    setThreadLoading(false);
+  };
+
+  const handleDeleteMessage = async (messageId: number) => {
+    if (!window.confirm('¿Borrar este mensaje?')) return;
+    setProcessing(messageId);
+    try {
+      await client.apiCall.invoke(`/api/v1/admin/messages/${messageId}`, {}, 'DELETE');
+      toast.success('Mensaje borrado');
+      setThreadMessages((prev) => prev.filter((m) => m.id !== messageId));
+      loadData();
+    } catch {
+      toast.error('No se pudo borrar el mensaje');
     }
     setProcessing(null);
   };
@@ -620,6 +674,7 @@ export default function Admin() {
               <TabsTrigger value="usuarios" className="cursor-pointer shrink-0">Usuarios ({stats?.users_total ?? 0})</TabsTrigger>
               <TabsTrigger value="trabajos" className="cursor-pointer shrink-0">Trabajos ({stats?.jobs_total ?? 0})</TabsTrigger>
               <TabsTrigger value="pujas" className="cursor-pointer shrink-0">Pujas ({bids.length})</TabsTrigger>
+              <TabsTrigger value="mensajes" className="cursor-pointer shrink-0">Mensajes ({stats?.messages_total ?? 0})</TabsTrigger>
               <TabsTrigger value="disputas" className="cursor-pointer shrink-0">Disputas ({stats?.disputes_open ?? 0})</TabsTrigger>
               <TabsTrigger value="resenas" className="cursor-pointer shrink-0">Reseñas ({stats?.reviews_total ?? 0})</TabsTrigger>
               <TabsTrigger value="profesionales" className="cursor-pointer shrink-0">Profesionales ({stats?.professionals_total ?? 0})</TabsTrigger>
@@ -726,11 +781,14 @@ export default function Admin() {
                   <Card key={j.id} className="bg-white">
                     <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
                       <div>
-                        <p className="font-medium text-sm">{j.title}</p>
+                        <p className="font-medium text-sm">
+                          <a href={`/jobs/${j.id}`} target="_blank" rel="noopener noreferrer" className="hover:underline text-emerald-700">{j.title}</a>
+                        </p>
                         <p className="text-xs text-muted-foreground">{j.category} · {j.location}, {j.country} · {fmtDate(j.created_at)}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <Badge className={j.status === 'removed' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}>{j.status}</Badge>
+                        <a href={`/jobs/${j.id}`} target="_blank" rel="noopener noreferrer"><Button size="sm" variant="outline" className="cursor-pointer">Ver</Button></a>
                         {j.status === 'removed' ? (
                           <Button size="sm" variant="outline" disabled={processing === j.id} className="cursor-pointer" onClick={() => handleJobAction(j.id, 'restore')}>Restaurar</Button>
                         ) : (
@@ -753,7 +811,9 @@ export default function Admin() {
                   <Card key={b.id} className="bg-white">
                     <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
                       <div>
-                        <p className="font-medium text-sm">{b.amount.toFixed(2)} € — {b.job_title || `Trabajo #${b.job_id}`}</p>
+                        <p className="font-medium text-sm">
+                          {b.amount.toFixed(2)} € — <a href={`/jobs/${b.job_id}`} target="_blank" rel="noopener noreferrer" className="hover:underline text-emerald-700">{b.job_title || `Trabajo #${b.job_id}`}</a>
+                        </p>
                         <p className="text-xs text-muted-foreground">{b.bidder_email || b.user_id} · {fmtDate(b.created_at)}</p>
                         {b.message && <p className="text-xs text-muted-foreground italic mt-1">"{b.message}"</p>}
                       </div>
@@ -772,6 +832,50 @@ export default function Admin() {
                   </Card>
                 ))}
                 {bids.length === 0 && !loading && <p className="text-muted-foreground text-sm">No hay pujas registradas.</p>}
+              </div>
+            </TabsContent>
+
+            {/* ===================== MENSAJES ===================== */}
+            <TabsContent value="mensajes">
+              <div className="space-y-2">
+                {conversations.map((c) => (
+                  <div key={c.job_id}>
+                    <Card className="bg-white cursor-pointer" onClick={() => handleOpenThread(c.job_id)}>
+                      <CardContent className="p-4 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-sm">{c.job_title || `Trabajo #${c.job_id}`}</p>
+                          <p className="text-xs text-muted-foreground truncate max-w-md">{c.last_message_preview}</p>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-xs text-muted-foreground">{c.message_count} mensajes · {fmtDate(c.last_message_at)}</span>
+                          <a href={`/jobs/${c.job_id}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                            <Button size="sm" variant="outline" className="cursor-pointer">Ver trabajo</Button>
+                          </a>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    {openThreadJobId === c.job_id && (
+                      <Card className="bg-slate-50 mt-1 mb-2">
+                        <CardContent className="p-4 space-y-2">
+                          {threadLoading ? (
+                            <p className="text-sm text-muted-foreground">Cargando conversación...</p>
+                          ) : (
+                            threadMessages.map((m) => (
+                              <div key={m.id} className="flex items-start justify-between gap-2 bg-white rounded-md p-2">
+                                <div>
+                                  <p className="text-xs text-muted-foreground">{m.sender_email || m.sender_id} → {m.receiver_email || m.receiver_id} · {fmtDate(m.created_at)}</p>
+                                  <p className="text-sm">{m.content}</p>
+                                </div>
+                                <Button size="sm" variant="ghost" disabled={processing === m.id} className="cursor-pointer text-red-600 shrink-0" onClick={() => handleDeleteMessage(m.id)}>Borrar</Button>
+                              </div>
+                            ))
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                ))}
+                {conversations.length === 0 && !loading && <p className="text-muted-foreground text-sm">No hay conversaciones registradas.</p>}
               </div>
             </TabsContent>
 
@@ -829,10 +933,14 @@ export default function Admin() {
                   <Card key={p.id} className="bg-white">
                     <CardContent className="p-4 flex items-center justify-between gap-3">
                       <div>
-                        <p className="font-medium text-sm">{p.display_name} {p.verified_kyc && <CheckCircle className="inline h-3.5 w-3.5 text-emerald-600 ml-1" />}</p>
+                        <p className="font-medium text-sm">
+                          <a href={`/pros/${p.id}`} target="_blank" rel="noopener noreferrer" className="hover:underline text-emerald-700">{p.display_name}</a>
+                          {p.verified_kyc && <CheckCircle className="inline h-3.5 w-3.5 text-emerald-600 ml-1" />}
+                        </p>
                         <p className="text-xs text-muted-foreground">{p.email} · {p.country || 'Sin país'} · {p.jobs_completed ?? 0} trabajos · ★{(p.rating ?? 0).toFixed(1)}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
+                        <a href={`/pros/${p.id}`} target="_blank" rel="noopener noreferrer"><Button size="sm" variant="outline" className="cursor-pointer">Ver perfil</Button></a>
                         <Button size="sm" variant="outline" disabled={processing === p.id} className="cursor-pointer" onClick={() => handleBanProfessional(p)}>Banear</Button>
                         <Button size="sm" variant="destructive" disabled={processing === p.id} className="cursor-pointer" onClick={() => handleDeleteProfessionalProfile(p)}>Borrar perfil</Button>
                       </div>

@@ -1273,3 +1273,114 @@ async def delete_professional_admin(
     await db.commit()
     await log_admin_action(db, current_user.id, current_user.email, "delete_professional", target=str(profile_id), details=name)
     return {"success": True}
+
+
+# ==================== Mensajes (moderación) ====================
+
+
+class AdminConversationResponse(BaseModel):
+    job_id: int
+    job_title: Optional[str] = None
+    message_count: int
+    last_message_at: Optional[datetime] = None
+    last_message_preview: Optional[str] = None
+
+
+@router.get("/messages/conversations", response_model=List[AdminConversationResponse])
+async def list_conversations_admin(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    current_user: UserResponse = Depends(get_staff_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Una fila por trabajo con conversación — para poder entrar a revisarla."""
+    result = await db.execute(
+        select(
+            Messages.job_id,
+            func.count(Messages.id).label("message_count"),
+            func.max(Messages.created_at).label("last_message_at"),
+        )
+        .group_by(Messages.job_id)
+        .order_by(func.max(Messages.created_at).desc())
+        .offset(skip).limit(limit)
+    )
+    rows = result.all()
+
+    job_ids = [r.job_id for r in rows]
+    jobs_by_id = {}
+    if job_ids:
+        jobs_result = await db.execute(select(Jobs).where(Jobs.id.in_(job_ids)))
+        jobs_by_id = {j.id: j.title for j in jobs_result.scalars().all()}
+
+    out = []
+    for r in rows:
+        last_msg_result = await db.execute(
+            select(Messages).where(Messages.job_id == r.job_id).order_by(Messages.created_at.desc()).limit(1)
+        )
+        last_msg = last_msg_result.scalar_one_or_none()
+        out.append(AdminConversationResponse(
+            job_id=r.job_id, job_title=jobs_by_id.get(r.job_id), message_count=r.message_count,
+            last_message_at=r.last_message_at,
+            last_message_preview=(last_msg.content[:120] if last_msg else None),
+        ))
+    return out
+
+
+class AdminMessageResponse(BaseModel):
+    id: int
+    job_id: int
+    sender_id: Optional[str] = None
+    sender_email: Optional[str] = None
+    receiver_id: Optional[str] = None
+    receiver_email: Optional[str] = None
+    content: str
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/messages/job/{job_id}", response_model=List[AdminMessageResponse])
+async def get_conversation_thread_admin(
+    job_id: int,
+    current_user: UserResponse = Depends(get_staff_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Messages).where(Messages.job_id == job_id).order_by(Messages.created_at.asc()))
+    messages = result.scalars().all()
+
+    user_ids = set()
+    for m in messages:
+        if m.sender_id:
+            user_ids.add(m.sender_id)
+        if m.receiver_id:
+            user_ids.add(m.receiver_id)
+    emails_by_id = {}
+    if user_ids:
+        users_result = await db.execute(select(User).where(User.id.in_(user_ids)))
+        emails_by_id = {u.id: u.email for u in users_result.scalars().all()}
+
+    return [
+        AdminMessageResponse(
+            id=m.id, job_id=m.job_id, sender_id=m.sender_id, sender_email=emails_by_id.get(m.sender_id),
+            receiver_id=m.receiver_id, receiver_email=emails_by_id.get(m.receiver_id),
+            content=m.content, created_at=m.created_at,
+        )
+        for m in messages
+    ]
+
+
+@router.delete("/messages/{message_id}")
+async def delete_message_admin(
+    message_id: int,
+    current_user: UserResponse = Depends(require_roles("admin", "moderacion")),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Messages).where(Messages.id == message_id))
+    message = result.scalar_one_or_none()
+    if not message:
+        raise HTTPException(status_code=404, detail="Mensaje no encontrado")
+    await db.delete(message)
+    await db.commit()
+    await log_admin_action(db, current_user.id, current_user.email, "delete_message", target=str(message_id))
+    return {"success": True}
