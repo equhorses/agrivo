@@ -66,11 +66,31 @@ function makeEntity(name: string) {
       return { data: res.data };
     },
     async create(payload: Record<string, unknown>) {
-      const res = await http().post(base, payload);
+      // Varias páginas llaman a esto como create({ data: {...} }) (heredado
+      // de la forma del SDK de Atoms) en vez de pasar los campos sueltos —
+      // aceptamos ambas formas para no depender de arreglar cada página.
+      const body = (payload && typeof payload.data === 'object' && payload.data !== null)
+        ? payload.data
+        : payload;
+      const res = await http().post(base, body);
       return { data: res.data };
     },
-    async update(id: string | number, payload: Record<string, unknown>) {
-      const res = await http().put(`${base}/${id}`, payload);
+    async update(idOrPayload: string | number | Record<string, unknown>, payload?: Record<string, unknown>) {
+      // Igual que en create(): acepta tanto update(id, datos) como el
+      // patrón heredado update({ id, data: {...} }) en una sola llamada.
+      let id: string | number;
+      let body: Record<string, unknown>;
+      if (typeof idOrPayload === 'object' && idOrPayload !== null && 'id' in idOrPayload) {
+        id = (idOrPayload as Record<string, unknown>).id as string | number;
+        const rawData = (idOrPayload as Record<string, unknown>).data;
+        body = (rawData && typeof rawData === 'object') ? (rawData as Record<string, unknown>) : (idOrPayload as Record<string, unknown>);
+      } else {
+        id = idOrPayload as string | number;
+        body = (payload && typeof payload.data === 'object' && payload.data !== null)
+          ? (payload.data as Record<string, unknown>)
+          : (payload || {});
+      }
+      const res = await http().put(`${base}/${id}`, body);
       return { data: res.data };
     },
     async remove(id: string | number) {
@@ -97,8 +117,26 @@ export function createClient() {
   return {
     auth: {
       async me() {
-        const res = await http().get('/api/v1/auth/me');
-        return { data: res.data };
+        // Reintenta ante fallos transitorios (Railway "duerme" el backend
+        // tras un rato sin tráfico y el primer arranque tarda unos
+        // segundos) sin tratarlo como "sesión cerrada". Solo un 401 real
+        // significa de verdad que el token no vale.
+        const maxAttempts = 3;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          try {
+            const res = await http().get('/api/v1/auth/me', { timeout: 15000 });
+            return { data: res.data };
+          } catch (err: any) {
+            const status = err?.response?.status;
+            const isAuthRejection = status === 401 || status === 403;
+            if (isAuthRejection || attempt === maxAttempts) {
+              throw err;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 1500 * attempt));
+          }
+        }
+        // Inalcanzable — el bucle siempre retorna o lanza.
+        throw new Error('No se pudo comprobar la sesión.');
       },
       setToken(token: string) {
         localStorage.setItem(TOKEN_KEY, token);
