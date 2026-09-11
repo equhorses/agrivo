@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Optional
 import stripe
 from core.config import settings
 from models.auth import User
+from models.profiles import Profiles
 from models.subscriptions import Subscriptions
 from services.email import send_subscription_confirmation_email
 from sqlalchemy import func, select
@@ -400,6 +401,19 @@ class SubscriptionsService:
 
         await self.db.commit()
         logger.info(f"Activated subscription for user_id={user_id} (subscription row {sub.id})")
+
+        # Beneficio del plan Empresa: radio de visibilidad ampliado a 150km
+        # (ver Precios) — se aplica una sola vez al activarse, sin reducirlo
+        # si el profesional ya lo tenía puesto más alto.
+        if plan == "enterprise":
+            try:
+                profile_result = await self.db.execute(select(Profiles).where(Profiles.user_id == user_id))
+                profile = profile_result.scalar_one_or_none()
+                if profile and (profile.service_radius_km or 0) < 150:
+                    profile.service_radius_km = 150
+                    await self.db.commit()
+            except Exception as e:
+                logger.warning(f"Could not widen service radius for user_id={user_id}: {e}")
 
         user_result = await self.db.execute(select(User).where(User.id == user_id))
         user = user_result.scalar_one_or_none()

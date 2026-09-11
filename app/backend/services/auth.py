@@ -10,6 +10,9 @@ from core.database import db_manager
 from core.security import hash_password, verify_password
 from fastapi import HTTPException, status
 from models.auth import User
+from models.invitations import Invitation
+from models.platform_settings import PlatformSettings
+from models.subscriptions import Subscriptions
 from services.email import send_welcome_email
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +23,40 @@ logger = logging.getLogger(__name__)
 class AuthService:
     def __init__(self, db: AsyncSession):
         self.db = db
+
+    async def _redeem_invitation_if_any(self, user: User) -> None:
+        """If this email has a pending complimentary-access invite, activate
+        it now: grant the invited plan and clock its free months from the
+        platform launch date (if set and still upcoming) or from today.
+        Silently does nothing if there's no pending invitation."""
+        result = await self.db.execute(
+            select(Invitation).where(Invitation.email == user.email, Invitation.status == "pending")
+        )
+        invitation = result.scalar_one_or_none()
+        if not invitation:
+            return
+
+        now = datetime.now(timezone.utc)
+        settings_result = await self.db.execute(select(PlatformSettings).where(PlatformSettings.id == 1))
+        platform_settings = settings_result.scalar_one_or_none()
+        launch_date = platform_settings.launch_date if platform_settings else None
+        clock_start = launch_date if (launch_date and launch_date > now) else now
+
+        sub_result = await self.db.execute(select(Subscriptions).where(Subscriptions.user_id == user.id))
+        sub = sub_result.scalar_one_or_none()
+        if not sub:
+            sub = Subscriptions(user_id=user.id, plan="free", status="inactive")
+            self.db.add(sub)
+
+        sub.plan = invitation.plan
+        sub.status = "active"
+        sub.subscription_end_date = clock_start + timedelta(days=30 * invitation.months)
+
+        invitation.status = "redeemed"
+        invitation.redeemed_at = now
+
+        await self.db.commit()
+        logger.info(f"Invitación de {invitation.months} meses de {invitation.plan} canjeada por {user.email}")
 
     async def register_user(
         self, email: str, password: str, name: Optional[str] = None, age_confirmed: bool = False
@@ -56,6 +93,7 @@ class AuthService:
         await self.db.commit()
         await self.db.refresh(user)
         await send_welcome_email(to_email=user.email, name=user.name)
+        await self._redeem_invitation_if_any(user)
         return user
 
     async def authenticate_user(self, email: str, password: str) -> User:
@@ -145,6 +183,7 @@ class AuthService:
         await self.db.refresh(user)
         if is_new_user:
             await send_welcome_email(to_email=user.email, name=user.name)
+            await self._redeem_invitation_if_any(user)
         return user, is_new_user
 
     async def issue_app_token(

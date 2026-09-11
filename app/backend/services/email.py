@@ -108,3 +108,53 @@ async def send_subscription_confirmation_email(to_email: str, plan: str, name: O
         logger.error(f"Fallo al enviar email de confirmación a {to_email}: {exc}")
         return False
 
+
+
+async def send_invitation_email(to_email: str, months: int, plan: str) -> bool:
+    """Send a complimentary-access invitation email via Resend. Never raises; returns True/False."""
+    api_key = getattr(settings, "resend_api_key", None)
+    from_email = getattr(settings, "resend_from_email", None)
+
+    if not api_key or not from_email:
+        logger.warning("Resend no configurado; email de invitación omitido")
+        return False
+
+    plan_label = "Empresa" if plan == "enterprise" else "Pro"
+
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+      <h2 style="color: #0A714E;">Tienes acceso gratis a Agrivo {plan_label}</h2>
+      <p>Te hemos regalado <strong>{months} {"mes" if months == 1 else "meses"}</strong> del plan
+      {plan_label} de Agrivo, sin coste alguno.</p>
+      <p>Regístrate con este mismo email ({to_email}) para que se active automáticamente.</p>
+      <p style="margin-top: 24px;">
+        <a href="https://agrivo.com/login?mode=register" style="background-color:#0A714E;color:#fff;
+        padding:10px 20px;border-radius:6px;text-decoration:none;">Crear mi cuenta</a>
+      </p>
+      <p style="margin-top: 24px; color: #666; font-size: 13px;">
+        Si tienes cualquier duda, escríbenos a
+        <a href="mailto:soporte@agrivo.com">soporte@agrivo.com</a>.
+      </p>
+    </div>
+    """
+
+    payload = {
+        "from": from_email,
+        "to": [to_email],
+        "subject": f"Tienes {months} {'mes' if months == 1 else 'meses'} gratis de Agrivo {plan_label}",
+        "html": html_content,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                RESEND_API_URL,
+                headers={"Authorization": f"Bearer {api_key}"},
+                json=payload,
+            )
+            response.raise_for_status()
+        logger.info(f"Email de invitación enviado a {to_email}")
+        return True
+    except httpx.HTTPError as exc:
+        logger.error(f"Fallo al enviar email de invitación a {to_email}: {exc}")
+        return False

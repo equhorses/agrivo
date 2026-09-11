@@ -26,11 +26,14 @@ from models.profiles import Profiles
 from models.disputes import Disputes
 from models.messages import Messages
 from models.audit import AuditLog, LoginAttempt
+from models.invitations import Invitation
+from models.platform_settings import PlatformSettings
 from services.audit import log_admin_action
 from services.house_ad_bookings import AdBookingsService
 from services.user import purge_user_completely
 from routers.house_ads import KNOWN_SLOTS
 from services.email_service import send_email, kyc_approved_email, kyc_rejected_email
+from services.email import send_invitation_email
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
@@ -1118,3 +1121,155 @@ async def resolve_dispute_admin(
         target=str(dispute_id), details=f"{payload.status}: {payload.resolution}",
     )
     return dispute
+
+
+# ==================== Invitaciones de cortesía ====================
+
+
+class InvitationResponse(BaseModel):
+    id: int
+    email: str
+    plan: str
+    months: int
+    status: str
+    source: Optional[str] = None
+    created_at: Optional[datetime] = None
+    redeemed_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class CreateInvitationRequest(BaseModel):
+    email: str
+    plan: str = "pro"  # pro | enterprise
+    months: int = 1
+    source: Optional[str] = None
+
+
+@router.get("/invitations", response_model=List[InvitationResponse])
+async def list_invitations(
+    current_user: UserResponse = Depends(get_staff_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Invitation).order_by(Invitation.created_at.desc()))
+    return result.scalars().all()
+
+
+@router.post("/invitations", response_model=InvitationResponse, status_code=201)
+async def create_invitation(
+    payload: CreateInvitationRequest,
+    current_user: UserResponse = Depends(require_roles("admin", "marketing")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Crea una invitación de acceso gratis y manda el email al momento. Si
+    ese email ya tiene una invitación pendiente, la actualiza en vez de
+    duplicarla."""
+    if payload.plan not in ("pro", "enterprise"):
+        raise HTTPException(status_code=400, detail="El plan debe ser 'pro' o 'enterprise'.")
+
+    email = payload.email.strip().lower()
+    existing_result = await db.execute(
+        select(Invitation).where(Invitation.email == email, Invitation.status == "pending")
+    )
+    invitation = existing_result.scalar_one_or_none()
+    if invitation:
+        invitation.plan = payload.plan
+        invitation.months = payload.months
+        invitation.source = payload.source
+    else:
+        invitation = Invitation(email=email, plan=payload.plan, months=payload.months, source=payload.source)
+        db.add(invitation)
+
+    await db.commit()
+    await db.refresh(invitation)
+
+    await send_invitation_email(to_email=email, months=payload.months, plan=payload.plan)
+    await log_admin_action(
+        db, current_user.id, current_user.email, "create_invitation",
+        target=email, details=f"{payload.plan} x{payload.months} meses",
+    )
+    return invitation
+
+
+@router.delete("/invitations/{invitation_id}")
+async def revoke_invitation(
+    invitation_id: int,
+    current_user: UserResponse = Depends(require_roles("admin", "marketing")),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Invitation).where(Invitation.id == invitation_id))
+    invitation = result.scalar_one_or_none()
+    if not invitation:
+        raise HTTPException(status_code=404, detail="Invitación no encontrada")
+    if invitation.status == "pending":
+        invitation.status = "revoked"
+        invitation.revoked_at = datetime.now(timezone.utc)
+        await db.commit()
+    else:
+        await db.delete(invitation)
+        await db.commit()
+    await log_admin_action(db, current_user.id, current_user.email, "revoke_invitation", target=invitation.email)
+    return {"success": True}
+
+
+# ==================== Fecha de lanzamiento de la plataforma ====================
+
+
+class PlatformSettingsResponse(BaseModel):
+    launch_date: Optional[datetime] = None
+
+
+class UpdatePlatformSettingsRequest(BaseModel):
+    launch_date: Optional[datetime] = None
+
+
+@router.get("/platform-settings", response_model=PlatformSettingsResponse)
+async def get_platform_settings(
+    current_user: UserResponse = Depends(get_staff_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(PlatformSettings).where(PlatformSettings.id == 1))
+    settings_row = result.scalar_one_or_none()
+    return PlatformSettingsResponse(launch_date=settings_row.launch_date if settings_row else None)
+
+
+@router.put("/platform-settings", response_model=PlatformSettingsResponse)
+async def update_platform_settings(
+    payload: UpdatePlatformSettingsRequest,
+    current_user: UserResponse = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(PlatformSettings).where(PlatformSettings.id == 1))
+    settings_row = result.scalar_one_or_none()
+    if not settings_row:
+        settings_row = PlatformSettings(id=1)
+        db.add(settings_row)
+    settings_row.launch_date = payload.launch_date
+    await db.commit()
+    await log_admin_action(
+        db, current_user.id, current_user.email, "update_launch_date",
+        details=payload.launch_date.isoformat() if payload.launch_date else "cleared",
+    )
+    return PlatformSettingsResponse(launch_date=settings_row.launch_date)
+
+
+# ==================== Profesionales: acciones ====================
+
+
+@router.delete("/professionals/{profile_id}")
+async def delete_professional_admin(
+    profile_id: int,
+    current_user: UserResponse = Depends(require_roles("admin", "moderacion")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Borra solo el perfil profesional (no la cuenta de usuario entera)."""
+    result = await db.execute(select(Profiles).where(Profiles.id == profile_id))
+    profile = result.scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Perfil no encontrado")
+    name = profile.display_name
+    await db.delete(profile)
+    await db.commit()
+    await log_admin_action(db, current_user.id, current_user.email, "delete_professional", target=str(profile_id), details=name)
+    return {"success": True}

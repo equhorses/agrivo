@@ -9,10 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import {
-  CheckCircle, XCircle, Clock, Shield, FileText, User, Megaphone, LayoutDashboard,
-  Users, Briefcase, Gavel, AlertTriangle, Star, UserCheck, Lock, ScrollText, UsersRound,
-} from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Shield, FileText, User, Megaphone } from 'lucide-react';
 import { toast } from 'sonner';
 
 const client = createClient();
@@ -53,6 +50,25 @@ interface AdSlotItem {
   self_service_enabled: boolean;
   occupied_until: string | null;
   queue_length: number;
+}
+
+interface HouseAdItem {
+  slot: string;
+  title: string;
+  image_url: string;
+  link_url: string;
+  active: boolean;
+}
+
+interface InvitationItem {
+  id: number;
+  email: string;
+  plan: string;
+  months: number;
+  status: string;
+  source: string | null;
+  created_at: string | null;
+  redeemed_at: string | null;
 }
 
 interface DashboardStats {
@@ -180,6 +196,36 @@ const STAFF_ROLE_OPTIONS = [
   { value: 'user', label: 'Quitar rol de staff' },
 ];
 
+function HouseAdEditor({
+  slot, current, saving, onSave, onDelete,
+}: {
+  slot: string;
+  current: HouseAdItem | undefined;
+  saving: boolean;
+  onSave: (slot: string, title: string, imageUrl: string, linkUrl: string) => void;
+  onDelete: (slot: string) => void;
+}) {
+  const [title, setTitle] = useState(current?.title || '');
+  const [imageUrl, setImageUrl] = useState(current?.image_url || '');
+  const [linkUrl, setLinkUrl] = useState(current?.link_url || '');
+
+  return (
+    <Card className="bg-white">
+      <CardHeader><CardTitle className="text-sm">{SLOT_LABELS[slot] || slot}</CardTitle></CardHeader>
+      <CardContent className="space-y-2">
+        {current?.image_url && <img src={current.image_url} alt={current.title} className="w-full h-24 object-cover rounded-md bg-slate-100" />}
+        <Input placeholder="Título / texto alternativo" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <Input placeholder="URL de la imagen" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+        <Input placeholder="Enlace al hacer clic" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
+        <div className="flex gap-2">
+          <Button size="sm" disabled={saving} className="cursor-pointer bg-emerald-600 hover:bg-emerald-700" onClick={() => onSave(slot, title, imageUrl, linkUrl)}>Guardar</Button>
+          {current && <Button size="sm" variant="destructive" disabled={saving} className="cursor-pointer" onClick={() => onDelete(slot)}>Quitar</Button>}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Admin() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
@@ -190,6 +236,12 @@ export default function Admin() {
   const [allKyc, setAllKyc] = useState<KycItem[]>([]);
   const [adBookings, setAdBookings] = useState<AdBookingItem[]>([]);
   const [adSlots, setAdSlots] = useState<AdSlotItem[]>([]);
+  const [houseAds, setHouseAds] = useState<HouseAdItem[]>([]);
+  const [invitations, setInvitations] = useState<InvitationItem[]>([]);
+  const [launchDate, setLaunchDate] = useState<string>('');
+  const [newInviteEmail, setNewInviteEmail] = useState('');
+  const [newInvitePlan, setNewInvitePlan] = useState('pro');
+  const [newInviteMonths, setNewInviteMonths] = useState(1);
   const [slotSaving, setSlotSaving] = useState<string | null>(null);
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -220,43 +272,46 @@ export default function Admin() {
   }, []);
 
   const loadData = async (search?: string) => {
-    try {
-      const [
-        pendingRes, allRes, bookingsRes, slotsRes, statsRes, usersRes, jobsRes,
-        bidsRes, disputesRes, reviewsRes, prosRes, securityRes, auditRes, staffRes,
-      ] = await Promise.all([
-        client.apiCall.invoke('/api/v1/admin/kyc/pending', {}, 'GET'),
-        client.apiCall.invoke('/api/v1/admin/kyc/all', {}, 'GET'),
-        client.apiCall.invoke('/api/v1/admin/ad-bookings', {}, 'GET'),
-        client.apiCall.invoke('/api/v1/admin/ad-slots', {}, 'GET'),
-        client.apiCall.invoke('/api/v1/admin/dashboard', {}, 'GET'),
-        client.apiCall.invoke(`/api/v1/admin/users${search ? `?search=${encodeURIComponent(search)}` : ''}`, {}, 'GET'),
-        client.apiCall.invoke('/api/v1/admin/jobs', {}, 'GET'),
-        client.apiCall.invoke('/api/v1/admin/bids', {}, 'GET'),
-        client.apiCall.invoke('/api/v1/admin/disputes', {}, 'GET'),
-        client.apiCall.invoke('/api/v1/admin/reviews', {}, 'GET'),
-        client.apiCall.invoke('/api/v1/admin/professionals', {}, 'GET'),
-        client.apiCall.invoke('/api/v1/admin/security', {}, 'GET'),
-        client.apiCall.invoke('/api/v1/admin/audit-log', {}, 'GET'),
-        client.apiCall.invoke('/api/v1/admin/staff', {}, 'GET'),
-      ]);
-      if (pendingRes?.data?.items) setPendingKyc(pendingRes.data.items);
-      if (allRes?.data?.items) setAllKyc(allRes.data.items);
-      if (bookingsRes?.data) setAdBookings(bookingsRes.data);
-      if (slotsRes?.data) setAdSlots(slotsRes.data);
-      if (statsRes?.data) setStats(statsRes.data);
-      if (usersRes?.data?.items) setUsers(usersRes.data.items);
-      if (jobsRes?.data) setJobs(jobsRes.data);
-      if (bidsRes?.data) setBids(bidsRes.data);
-      if (disputesRes?.data) setDisputes(disputesRes.data);
-      if (reviewsRes?.data) setReviews(reviewsRes.data);
-      if (prosRes?.data) setProfessionals(prosRes.data);
-      if (securityRes?.data) setSecurity(securityRes.data);
-      if (auditRes?.data) setAuditLog(auditRes.data);
-      if (staffRes?.data) setStaff(staffRes.data);
-    } catch (err) {
-      console.error('Error loading admin data:', err);
-    }
+    const endpoints: Array<[string, (data: unknown) => void]> = [
+      ['/api/v1/admin/kyc/pending', (d: any) => d?.items && setPendingKyc(d.items)],
+      ['/api/v1/admin/kyc/all', (d: any) => d?.items && setAllKyc(d.items)],
+      ['/api/v1/admin/ad-bookings', (d: any) => d && setAdBookings(d)],
+      ['/api/v1/admin/ad-slots', (d: any) => d && setAdSlots(d)],
+      ['/api/v1/admin/house-ads', (d: any) => d && setHouseAds(d)],
+      ['/api/v1/admin/invitations', (d: any) => d && setInvitations(d)],
+      ['/api/v1/admin/platform-settings', (d: any) => setLaunchDate(d?.launch_date ? d.launch_date.slice(0, 16) : '')],
+      ['/api/v1/admin/dashboard', (d: any) => d && setStats(d)],
+      [`/api/v1/admin/users${search ? `?search=${encodeURIComponent(search)}` : ''}`, (d: any) => d?.items && setUsers(d.items)],
+      ['/api/v1/admin/jobs', (d: any) => d && setJobs(d)],
+      ['/api/v1/admin/bids', (d: any) => d && setBids(d)],
+      ['/api/v1/admin/disputes', (d: any) => d && setDisputes(d)],
+      ['/api/v1/admin/reviews', (d: any) => d && setReviews(d)],
+      ['/api/v1/admin/professionals', (d: any) => d && setProfessionals(d)],
+      ['/api/v1/admin/security', (d: any) => d && setSecurity(d)],
+      ['/api/v1/admin/audit-log', (d: any) => d && setAuditLog(d)],
+      ['/api/v1/admin/staff', (d: any) => d && setStaff(d)],
+    ];
+
+    // Promise.allSettled en vez de Promise.all: si una sola pestaña falla
+    // (p.ej. un endpoint que aún no existe en el backend desplegado), las
+    // demás igualmente se rellenan en vez de quedarse todas en blanco.
+    const results = await Promise.allSettled(
+      endpoints.map(([path]) => client.apiCall.invoke(path, {}, 'GET'))
+    );
+
+    results.forEach((result, i) => {
+      const [path, apply] = endpoints[i];
+      if (result.status === 'fulfilled') {
+        try {
+          apply(result.value?.data);
+        } catch (e) {
+          console.error(`Admin: error aplicando datos de ${path}`, e);
+        }
+      } else {
+        console.error(`Admin: fallo cargando ${path}`, result.reason);
+      }
+    });
+
     setLoading(false);
   };
 
@@ -306,6 +361,105 @@ export default function Admin() {
       toast.error('No se pudo actualizar el hueco');
     }
     setSlotSaving(null);
+  };
+
+  const handleSaveHouseAd = async (slot: string, title: string, imageUrl: string, linkUrl: string) => {
+    if (!title.trim() || !imageUrl.trim() || !linkUrl.trim()) {
+      toast.error('Rellena título, imagen y enlace');
+      return;
+    }
+    setSlotSaving(slot);
+    try {
+      await client.apiCall.invoke(`/api/v1/admin/house-ads/${slot}`, { title, image_url: imageUrl, link_url: linkUrl, active: true }, 'PUT');
+      toast.success('Anuncio guardado');
+      loadData();
+    } catch {
+      toast.error('No se pudo guardar el anuncio');
+    }
+    setSlotSaving(null);
+  };
+
+  const handleDeleteHouseAd = async (slot: string) => {
+    if (!window.confirm('¿Quitar el anuncio de este hueco?')) return;
+    setSlotSaving(slot);
+    try {
+      await client.apiCall.invoke(`/api/v1/admin/house-ads/${slot}`, {}, 'DELETE');
+      toast.success('Anuncio retirado');
+      loadData();
+    } catch {
+      toast.error('No se pudo quitar el anuncio');
+    }
+    setSlotSaving(null);
+  };
+
+  const handleCreateInvitation = async () => {
+    if (!newInviteEmail.trim()) {
+      toast.error('Escribe el email de la persona a invitar');
+      return;
+    }
+    setProcessing('create-invitation');
+    try {
+      await client.apiCall.invoke('/api/v1/admin/invitations', { email: newInviteEmail.trim(), plan: newInvitePlan, months: newInviteMonths }, 'POST');
+      toast.success('Invitación enviada');
+      setNewInviteEmail('');
+      loadData();
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'No se pudo enviar la invitación.';
+      toast.error(message);
+    }
+    setProcessing(null);
+  };
+
+  const handleRevokeInvitation = async (id: number) => {
+    if (!window.confirm('¿Revocar esta invitación?')) return;
+    setProcessing(id);
+    try {
+      await client.apiCall.invoke(`/api/v1/admin/invitations/${id}`, {}, 'DELETE');
+      toast.success('Invitación revocada');
+      loadData();
+    } catch {
+      toast.error('No se pudo revocar la invitación');
+    }
+    setProcessing(null);
+  };
+
+  const handleSaveLaunchDate = async () => {
+    setProcessing('launch-date');
+    try {
+      await client.apiCall.invoke('/api/v1/admin/platform-settings', { launch_date: launchDate ? new Date(launchDate).toISOString() : null }, 'PUT');
+      toast.success('Fecha de lanzamiento guardada');
+      loadData();
+    } catch {
+      toast.error('No se pudo guardar la fecha');
+    }
+    setProcessing(null);
+  };
+
+  const handleBanProfessional = async (p: AdminProfessional) => {
+    const reason = window.prompt('Motivo del baneo (opcional):') || undefined;
+    setProcessing(p.id);
+    try {
+      await client.apiCall.invoke(`/api/v1/admin/users/${p.user_id}/ban`, { reason }, 'POST');
+      toast.success('Usuario baneado');
+      loadData();
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'No se pudo banear.';
+      toast.error(message);
+    }
+    setProcessing(null);
+  };
+
+  const handleDeleteProfessionalProfile = async (p: AdminProfessional) => {
+    if (!window.confirm(`¿Borrar el perfil profesional de ${p.display_name}? (la cuenta de usuario no se borra, solo el perfil)`)) return;
+    setProcessing(p.id);
+    try {
+      await client.apiCall.invoke(`/api/v1/admin/professionals/${p.id}`, {}, 'DELETE');
+      toast.success('Perfil borrado');
+      loadData();
+    } catch {
+      toast.error('No se pudo borrar el perfil');
+    }
+    setProcessing(null);
   };
 
   const handleUserSearch = () => {
@@ -461,20 +615,21 @@ export default function Admin() {
           </div>
 
           <Tabs defaultValue="resumen">
-            <TabsList className="mb-6 flex flex-wrap h-auto gap-1">
-              <TabsTrigger value="resumen" className="cursor-pointer"><LayoutDashboard className="h-3.5 w-3.5 mr-1" />Resumen</TabsTrigger>
-              <TabsTrigger value="usuarios" className="cursor-pointer"><Users className="h-3.5 w-3.5 mr-1" />Usuarios ({stats?.users_total ?? 0})</TabsTrigger>
-              <TabsTrigger value="trabajos" className="cursor-pointer"><Briefcase className="h-3.5 w-3.5 mr-1" />Trabajos ({stats?.jobs_total ?? 0})</TabsTrigger>
-              <TabsTrigger value="pujas" className="cursor-pointer"><Gavel className="h-3.5 w-3.5 mr-1" />Pujas ({bids.length})</TabsTrigger>
-              <TabsTrigger value="disputas" className="cursor-pointer"><AlertTriangle className="h-3.5 w-3.5 mr-1" />Disputas ({stats?.disputes_open ?? 0})</TabsTrigger>
-              <TabsTrigger value="resenas" className="cursor-pointer"><Star className="h-3.5 w-3.5 mr-1" />Reseñas ({stats?.reviews_total ?? 0})</TabsTrigger>
-              <TabsTrigger value="profesionales" className="cursor-pointer"><UserCheck className="h-3.5 w-3.5 mr-1" />Profesionales ({stats?.professionals_total ?? 0})</TabsTrigger>
-              <TabsTrigger value="publicidad" className="cursor-pointer"><Megaphone className="h-3.5 w-3.5 mr-1" />Publicidad ({adBookings.filter(b => b.status === 'pending_approval').length})</TabsTrigger>
-              <TabsTrigger value="kyc-pending" className="cursor-pointer"><Clock className="h-3.5 w-3.5 mr-1" />KYC Pendientes ({pendingKyc.length})</TabsTrigger>
-              <TabsTrigger value="kyc-all" className="cursor-pointer"><FileText className="h-3.5 w-3.5 mr-1" />KYC Todas ({allKyc.length})</TabsTrigger>
-              <TabsTrigger value="seguridad" className="cursor-pointer"><Lock className="h-3.5 w-3.5 mr-1" />Seguridad</TabsTrigger>
-              <TabsTrigger value="auditoria" className="cursor-pointer"><ScrollText className="h-3.5 w-3.5 mr-1" />Auditoría</TabsTrigger>
-              <TabsTrigger value="equipo" className="cursor-pointer"><UsersRound className="h-3.5 w-3.5 mr-1" />Equipo ({staff.length})</TabsTrigger>
+            <TabsList className="mb-6 flex w-full overflow-x-auto justify-start h-auto p-1 gap-1">
+              <TabsTrigger value="resumen" className="cursor-pointer shrink-0">Resumen</TabsTrigger>
+              <TabsTrigger value="usuarios" className="cursor-pointer shrink-0">Usuarios ({stats?.users_total ?? 0})</TabsTrigger>
+              <TabsTrigger value="trabajos" className="cursor-pointer shrink-0">Trabajos ({stats?.jobs_total ?? 0})</TabsTrigger>
+              <TabsTrigger value="pujas" className="cursor-pointer shrink-0">Pujas ({bids.length})</TabsTrigger>
+              <TabsTrigger value="disputas" className="cursor-pointer shrink-0">Disputas ({stats?.disputes_open ?? 0})</TabsTrigger>
+              <TabsTrigger value="resenas" className="cursor-pointer shrink-0">Reseñas ({stats?.reviews_total ?? 0})</TabsTrigger>
+              <TabsTrigger value="profesionales" className="cursor-pointer shrink-0">Profesionales ({stats?.professionals_total ?? 0})</TabsTrigger>
+              <TabsTrigger value="publicidad" className="cursor-pointer shrink-0">Publicidad ({adBookings.filter(b => b.status === 'pending_approval').length})</TabsTrigger>
+              <TabsTrigger value="kyc-pending" className="cursor-pointer shrink-0">KYC Pendientes ({pendingKyc.length})</TabsTrigger>
+              <TabsTrigger value="kyc-all" className="cursor-pointer shrink-0">KYC Todas ({allKyc.length})</TabsTrigger>
+              <TabsTrigger value="seguridad" className="cursor-pointer shrink-0">Seguridad</TabsTrigger>
+              <TabsTrigger value="auditoria" className="cursor-pointer shrink-0">Auditoría</TabsTrigger>
+              <TabsTrigger value="equipo" className="cursor-pointer shrink-0">Equipo ({staff.length})</TabsTrigger>
+              <TabsTrigger value="invitaciones" className="cursor-pointer shrink-0">Invitaciones ({invitations.filter(i => i.status === 'pending').length})</TabsTrigger>
             </TabsList>
 
             {/* ===================== RESUMEN ===================== */}
@@ -677,6 +832,10 @@ export default function Admin() {
                         <p className="font-medium text-sm">{p.display_name} {p.verified_kyc && <CheckCircle className="inline h-3.5 w-3.5 text-emerald-600 ml-1" />}</p>
                         <p className="text-xs text-muted-foreground">{p.email} · {p.country || 'Sin país'} · {p.jobs_completed ?? 0} trabajos · ★{(p.rating ?? 0).toFixed(1)}</p>
                       </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button size="sm" variant="outline" disabled={processing === p.id} className="cursor-pointer" onClick={() => handleBanProfessional(p)}>Banear</Button>
+                        <Button size="sm" variant="destructive" disabled={processing === p.id} className="cursor-pointer" onClick={() => handleDeleteProfessionalProfile(p)}>Borrar perfil</Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -715,6 +874,21 @@ export default function Admin() {
                           {slot.queue_length > 0 && <p className="text-xs text-muted-foreground">{slot.queue_length} en cola</p>}
                         </CardContent>
                       </Card>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-3" style={{ fontFamily: 'Poppins, sans-serif' }}>Contenido actual de cada hueco</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {adSlots.map((slot) => (
+                      <HouseAdEditor
+                        key={slot.slot}
+                        slot={slot.slot}
+                        current={houseAds.find((a) => a.slot === slot.slot)}
+                        saving={slotSaving === slot.slot}
+                        onSave={handleSaveHouseAd}
+                        onDelete={handleDeleteHouseAd}
+                      />
                     ))}
                   </div>
                 </div>
@@ -920,6 +1094,60 @@ export default function Admin() {
                   </Card>
                 ))}
                 {staff.length === 0 && !loading && <p className="text-muted-foreground text-sm">No hay más miembros del equipo aparte de ti.</p>}
+              </div>
+            </TabsContent>
+
+            {/* ===================== INVITACIONES ===================== */}
+            <TabsContent value="invitaciones">
+              <Card className="bg-white mb-6">
+                <CardHeader><CardTitle className="text-base">Fecha de lanzamiento de la plataforma</CardTitle></CardHeader>
+                <CardContent className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                  <p className="text-sm text-muted-foreground flex-1">
+                    Los meses gratis de las invitaciones empiezan a contar desde esta fecha (o desde hoy, si ya pasó o no la pones).
+                  </p>
+                  <Input type="datetime-local" value={launchDate} onChange={(e) => setLaunchDate(e.target.value)} className="w-56" />
+                  <Button disabled={processing === 'launch-date'} className="cursor-pointer bg-emerald-600 hover:bg-emerald-700" onClick={handleSaveLaunchDate}>Guardar fecha</Button>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white mb-6">
+                <CardHeader><CardTitle className="text-base">Invitar por email</CardTitle></CardHeader>
+                <CardContent className="flex flex-col sm:flex-row gap-2">
+                  <Input placeholder="email@ejemplo.com" value={newInviteEmail} onChange={(e) => setNewInviteEmail(e.target.value)} className="max-w-xs" />
+                  <select value={newInvitePlan} onChange={(e) => setNewInvitePlan(e.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+                    <option value="pro">Pro</option>
+                    <option value="enterprise">Empresa</option>
+                  </select>
+                  <Input type="number" min={1} value={newInviteMonths} onChange={(e) => setNewInviteMonths(parseInt(e.target.value) || 1)} className="w-24" />
+                  <span className="text-sm text-muted-foreground self-center">meses gratis</span>
+                  <Button disabled={processing === 'create-invitation'} className="cursor-pointer bg-emerald-600 hover:bg-emerald-700" onClick={handleCreateInvitation}>Enviar invitación</Button>
+                </CardContent>
+              </Card>
+
+              <div className="space-y-2">
+                {invitations.map((inv) => (
+                  <Card key={inv.id} className="bg-white">
+                    <CardContent className="p-4 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-sm">{inv.email}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {inv.plan === 'enterprise' ? 'Empresa' : 'Pro'} · {inv.months} {inv.months === 1 ? 'mes' : 'meses'} gratis · {fmtDate(inv.created_at)}
+                          {inv.redeemed_at && ` · canjeada ${fmtDate(inv.redeemed_at)}`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge className={
+                          inv.status === 'redeemed' ? 'bg-emerald-100 text-emerald-800'
+                          : inv.status === 'revoked' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                        }>{inv.status}</Badge>
+                        {inv.status === 'pending' && (
+                          <Button size="sm" variant="destructive" disabled={processing === inv.id} className="cursor-pointer" onClick={() => handleRevokeInvitation(inv.id)}>Revocar</Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {invitations.length === 0 && !loading && <p className="text-muted-foreground text-sm">No hay invitaciones enviadas todavía.</p>}
               </div>
             </TabsContent>
           </Tabs>

@@ -170,6 +170,27 @@ async def query_profiless_all(
             sort=sort
         )
         logger.debug(f"Found {result['total']} profiless")
+
+        # Ranking priorizado (ver Precios, plan Pro/Empresa): dentro de esta
+        # página de resultados, los profesionales con suscripción de pago
+        # activa se reordenan primero, manteniendo el orden pedido dentro de
+        # cada grupo.
+        items = result.get("items") or []
+        if items:
+            from models.subscriptions import Subscriptions as _Subscriptions
+            user_ids = [it.user_id for it in items if getattr(it, "user_id", None)]
+            if user_ids:
+                subs_result = await db.execute(
+                    select(_Subscriptions).where(
+                        _Subscriptions.user_id.in_(user_ids), _Subscriptions.status == "active"
+                    )
+                )
+                tier_by_user_id = {}
+                for s in subs_result.scalars().all():
+                    tier_by_user_id[s.user_id] = 2 if s.plan == "enterprise" else (1 if s.plan == "pro" else 0)
+                items.sort(key=lambda it: -tier_by_user_id.get(getattr(it, "user_id", None), 0))
+                result["items"] = items
+
         return result
     except HTTPException:
         raise

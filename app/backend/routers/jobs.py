@@ -2,16 +2,19 @@ import json
 import logging
 from typing import List, Optional
 
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from services.jobs import JobsService
 from dependencies.auth import get_current_user
 from schemas.auth import UserResponse
+from models.jobs import Jobs
+from models.subscriptions import Subscriptions
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -200,6 +203,9 @@ async def get_jobs(
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
+FREE_PLAN_MONTHLY_JOB_LIMIT = 3
+
+
 @router.post("", response_model=JobsResponse, status_code=201)
 async def create_jobs(
     data: JobsData,
@@ -208,7 +214,29 @@ async def create_jobs(
 ):
     """Create a new jobs"""
     logger.debug(f"Creating new jobs with data: {data}")
-    
+
+    # Plan Free: máximo 3 trabajos publicados por mes natural (ver Precios).
+    # Los planes Pro/Empresa activos no tienen límite.
+    sub_result = await db.execute(select(Subscriptions).where(Subscriptions.user_id == str(current_user.id)))
+    subscription = sub_result.scalar_one_or_none()
+    has_paid_plan = bool(subscription and subscription.status == "active" and subscription.plan in ("pro", "enterprise"))
+
+    if not has_paid_plan:
+        month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        count_result = await db.execute(
+            select(func.count()).select_from(Jobs)
+            .where(Jobs.user_id == str(current_user.id), Jobs.created_at >= month_start)
+        )
+        jobs_this_month = count_result.scalar_one()
+        if jobs_this_month >= FREE_PLAN_MONTHLY_JOB_LIMIT:
+            raise HTTPException(
+                status_code=402,
+                detail=(
+                    f"Has alcanzado el límite de {FREE_PLAN_MONTHLY_JOB_LIMIT} trabajos/mes del plan Free. "
+                    "Actualiza a Pro o Empresa para publicar sin límite."
+                ),
+            )
+
     service = JobsService(db)
     try:
         result = await service.create(data.model_dump(), user_id=str(current_user.id))
