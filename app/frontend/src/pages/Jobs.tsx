@@ -39,7 +39,9 @@ export default function Jobs() {
       const res = await client.entities.jobs.queryAll({ query, sort: '-created_at', limit: 50 });
       const realJobs = res?.data?.items || [];
 
-      // Merge with seed jobs, filtered
+      const MIN_JOBS_SHOWN = 6;
+      const needed = Math.max(0, MIN_JOBS_SHOWN - realJobs.length);
+
       let seeds = SEED_JOBS.filter((j) => {
         if (categoryFilter && categoryFilter !== 'all' && j.category !== categoryFilter) return false;
         if (countryFilter && countryFilter !== 'all' && j.country !== countryFilter) return false;
@@ -47,9 +49,8 @@ export default function Jobs() {
         return true;
       });
 
-      // Remove seeds that match real jobs by title
       const realTitles = new Set(realJobs.map((j: any) => j.title?.toLowerCase()));
-      seeds = seeds.filter((s) => !realTitles.has(s.title.toLowerCase()));
+      seeds = seeds.filter((s) => !realTitles.has(s.title.toLowerCase())).slice(0, needed);
 
       setJobs([...realJobs, ...seeds]);
     } catch {
