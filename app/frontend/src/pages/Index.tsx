@@ -65,7 +65,7 @@ export default function Index() {
       .catch(() => {});
 
     // Load real jobs, fallback to seeds
-    client.entities.jobs.queryAll({ limit: 6, sort: '-created_at' })
+    client.entities.jobs.queryAll({ query: { status: 'open' }, limit: 6, sort: '-created_at' })
       .then((res) => {
         const realJobs = res?.data?.items || [];
         if (realJobs.length >= 6) {

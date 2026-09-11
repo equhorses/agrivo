@@ -8,7 +8,7 @@ class Messages(Base):
     __table_args__ = {"extend_existing": True}
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True, nullable=False)
-    job_id = Column(Integer, nullable=False)
+    job_id = Column(Integer, nullable=True)
     sender_id = Column(String, nullable=True)
     receiver_id = Column(String, nullable=True)
     content = Column(String, nullable=False)

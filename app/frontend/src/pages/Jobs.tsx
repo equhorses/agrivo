@@ -31,7 +31,7 @@ export default function Jobs() {
   const loadJobs = async () => {
     setLoading(true);
     try {
-      const query: Record<string, any> = {};
+      const query: Record<string, any> = { status: 'open' };
       if (categoryFilter && categoryFilter !== 'all') query.category = categoryFilter;
       if (countryFilter && countryFilter !== 'all') query.country = countryFilter;
       if (typeFilter && typeFilter !== 'all') query.contract_type = typeFilter;

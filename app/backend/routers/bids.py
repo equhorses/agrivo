@@ -15,9 +15,24 @@ from dependencies.auth import get_current_user
 from schemas.auth import UserResponse
 from models.jobs import Jobs
 from models.bids import Bids
+from models.notifications import Notifications
+from models.messages import Messages
+from models.profiles import Profiles
 
 # Set up logging
 logger = logging.getLogger(__name__)
+
+
+def _notify(db: AsyncSession, user_id: str, type_: str, title: str, body: str = None, link: str = None) -> None:
+    """Encola una notificación in-app. No hace commit — quien llama ya hace
+    commit del resto de cambios en la misma transacción."""
+    db.add(Notifications(user_id=user_id, type=type_, title=title, body=body, link=link))
+
+
+def _auto_message(db: AsyncSession, job_id: int, sender_id: str, receiver_id: str, content: str) -> None:
+    """Manda un mensaje automático del sistema en nombre del dueño del trabajo,
+    para que quede en la conversación normal de Mensajes. No hace commit."""
+    db.add(Messages(job_id=job_id, sender_id=sender_id, receiver_id=receiver_id, content=content, user_id=sender_id))
 
 router = APIRouter(prefix="/api/v1/entities/bids", tags=["bids"])
 
@@ -199,7 +214,24 @@ async def create_bids(
         result = await service.create(data.model_dump(), user_id=str(current_user.id))
         if not result:
             raise HTTPException(status_code=400, detail="Failed to create bids")
-        
+
+        # Avisar al dueño del trabajo de que ha llegado una oferta nueva.
+        try:
+            job_result = await db.execute(select(Jobs).where(Jobs.id == result.job_id))
+            job = job_result.scalar_one_or_none()
+            if job:
+                _notify(
+                    db,
+                    user_id=job.user_id,
+                    type_="new_bid",
+                    title=f'Nueva oferta en "{job.title}"',
+                    body=f"${result.amount:,.0f} USD",
+                    link=f"/jobs/{job.id}",
+                )
+                await db.commit()
+        except Exception as notify_err:
+            logger.warning(f"No se pudo crear la notificación de nueva oferta: {notify_err}")
+
         logger.info(f"Bids created successfully with id: {result.id}")
         return result
     except ValueError as e:
@@ -331,8 +363,42 @@ async def accept_bid(
         others_result = await db.execute(
             select(Bids).where(Bids.job_id == job.id, Bids.id != bid.id, Bids.status == "pending")
         )
-        for other in others_result.scalars().all():
+        rejected_others = others_result.scalars().all()
+        for other in rejected_others:
             other.status = "rejected"
+
+        # Notificación + mensaje automático para el que gana...
+        accept_msg = (
+            f'¡Enhorabuena! Tu oferta de ${bid.amount:,.0f} USD para "{job.title}" ha sido aceptada. '
+            f"Podéis coordinar los detalles por aquí."
+        )
+        _notify(
+            db, user_id=bid.user_id, type_="bid_accepted",
+            title=f'¡Tu oferta para "{job.title}" fue aceptada!',
+            body=f"${bid.amount:,.0f} USD", link=f"/jobs/{job.id}",
+        )
+        _auto_message(db, job_id=job.id, sender_id=job.user_id, receiver_id=bid.user_id, content=accept_msg)
+
+        # ...y para los que se quedan fuera.
+        for other in rejected_others:
+            _notify(
+                db, user_id=other.user_id, type_="bid_rejected",
+                title=f'Tu oferta para "{job.title}" no fue seleccionada',
+                body=f"${other.amount:,.0f} USD", link=f"/jobs/{job.id}",
+            )
+            _auto_message(
+                db, job_id=job.id, sender_id=job.user_id, receiver_id=other.user_id,
+                content=(
+                    f'Gracias por tu oferta en "{job.title}". Esta vez hemos elegido otra propuesta, '
+                    f"¡pero esperamos verte en próximos trabajos!"
+                ),
+            )
+
+        # Suma un trabajo al historial del profesional que gana.
+        profile_result = await db.execute(select(Profiles).where(Profiles.user_id == bid.user_id))
+        winner_profile = profile_result.scalar_one_or_none()
+        if winner_profile:
+            winner_profile.jobs_completed = (winner_profile.jobs_completed or 0) + 1
 
         await db.commit()
         await db.refresh(bid)
@@ -354,9 +420,23 @@ async def reject_bid(
 ):
     """Rechaza una oferta (solo el dueño del trabajo)."""
     try:
-        bid, _job = await _get_bid_and_owned_job(id, current_user, db)
+        bid, job = await _get_bid_and_owned_job(id, current_user, db)
 
         bid.status = "rejected"
+
+        _notify(
+            db, user_id=bid.user_id, type_="bid_rejected",
+            title=f'Tu oferta para "{job.title}" no fue seleccionada',
+            body=f"${bid.amount:,.0f} USD", link=f"/jobs/{job.id}",
+        )
+        _auto_message(
+            db, job_id=job.id, sender_id=job.user_id, receiver_id=bid.user_id,
+            content=(
+                f'Gracias por tu oferta en "{job.title}". Esta vez hemos elegido otra propuesta, '
+                f"¡pero esperamos verte en próximos trabajos!"
+            ),
+        )
+
         await db.commit()
         await db.refresh(bid)
         logger.info(f"Bid {id} rejected")

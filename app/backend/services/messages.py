@@ -1,7 +1,7 @@
 import logging
 from typing import Optional, Dict, Any, List
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.messages import Messages
@@ -101,6 +101,49 @@ class MessagesService:
             }
         except Exception as e:
             logger.error(f"Error fetching messages list: {str(e)}")
+            raise
+
+    async def get_participant_list(
+        self,
+        skip: int = 0,
+        limit: int = 20,
+        participant_id: Optional[str] = None,
+        query_dict: Optional[Dict[str, Any]] = None,
+        sort: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Mensajes donde el usuario es remitente O destinatario (una conversación real,
+        a diferencia de get_list que solo mira quién lo escribió)."""
+        try:
+            query = select(Messages)
+            count_query = select(func.count(Messages.id))
+
+            if participant_id:
+                cond = or_(Messages.sender_id == participant_id, Messages.receiver_id == participant_id)
+                query = query.where(cond)
+                count_query = count_query.where(cond)
+
+            if query_dict:
+                for field, value in query_dict.items():
+                    if hasattr(Messages, field):
+                        query = query.where(getattr(Messages, field) == value)
+                        count_query = count_query.where(getattr(Messages, field) == value)
+
+            count_result = await self.db.execute(count_query)
+            total = count_result.scalar()
+
+            if sort and sort.startswith('-') and hasattr(Messages, sort[1:]):
+                query = query.order_by(getattr(Messages, sort[1:]).desc())
+            elif sort and hasattr(Messages, sort):
+                query = query.order_by(getattr(Messages, sort))
+            else:
+                query = query.order_by(Messages.id.desc())
+
+            result = await self.db.execute(query.offset(skip).limit(limit))
+            items = result.scalars().all()
+
+            return {"items": items, "total": total, "skip": skip, "limit": limit}
+        except Exception as e:
+            logger.error(f"Error fetching messages participant list: {str(e)}")
             raise
 
     async def update(self, obj_id: int, update_data: Dict[str, Any], user_id: Optional[str] = None) -> Optional[Messages]:

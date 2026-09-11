@@ -105,6 +105,7 @@ const ENTITY_NAMES = [
   'jobs',
   'kyc_verifications',
   'messages',
+  'notifications',
   'profiles',
   'subscriptions',
 ] as const;

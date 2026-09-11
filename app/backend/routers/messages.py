@@ -22,7 +22,7 @@ router = APIRouter(prefix="/api/v1/entities/messages", tags=["messages"])
 # ---------- Pydantic Schemas ----------
 class MessagesData(BaseModel):
     """Entity data schema (for create/update)"""
-    job_id: int
+    job_id: Optional[int] = None
     sender_id: str = None
     receiver_id: str = None
     content: str
@@ -39,7 +39,7 @@ class MessagesUpdateData(BaseModel):
 class MessagesResponse(BaseModel):
     """Entity response schema"""
     id: int
-    job_id: int
+    job_id: Optional[int] = None
     sender_id: Optional[str] = None
     receiver_id: Optional[str] = None
     content: str
@@ -91,9 +91,9 @@ async def query_messagess(
     current_user: UserResponse = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Query messagess with filtering, sorting, and pagination (user can only see their own records)"""
+    """Query messagess with filtering, sorting, and pagination (user can only see conversations they're part of)"""
     logger.debug(f"Querying messagess: query={query}, sort={sort}, skip={skip}, limit={limit}, fields={fields}")
-    
+
     service = MessagesService(db)
     try:
         # Parse query JSON if provided
@@ -103,13 +103,17 @@ async def query_messagess(
                 query_dict = json.loads(query)
             except json.JSONDecodeError:
                 raise HTTPException(status_code=400, detail="Invalid query JSON format")
-        
-        result = await service.get_list(
-            skip=skip, 
+
+        # OJO: "mío" para mensajes significa "soy remitente o destinatario",
+        # no "user_id == yo" (ese campo solo guarda quién lo escribió, así
+        # que filtrar por él dejaba al destinatario sin ver nada de lo que
+        # le mandaban).
+        result = await service.get_participant_list(
+            skip=skip,
             limit=limit,
             query_dict=query_dict,
             sort=sort,
-            user_id=str(current_user.id),
+            participant_id=str(current_user.id),
         )
         logger.debug(f"Found {result['total']} messagess")
         return result

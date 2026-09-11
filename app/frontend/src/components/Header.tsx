@@ -3,7 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { createClient } from '@/lib/atomsClient';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, User, LogOut, LayoutDashboard, MessageSquare, AlertTriangle, Shield } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Menu, User, LogOut, LayoutDashboard, MessageSquare, AlertTriangle, Shield, Bell } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,8 +22,20 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [locale, changeLocale] = useLocale();
+  const [notifications, setNotifications] = useState<any[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const loadNotifications = async () => {
+    try {
+      const res = await client.entities.notifications.queryMine({ limit: 20, sort: '-created_at' });
+      setNotifications(res?.data?.items || []);
+    } catch {
+      // sin notificaciones o error silencioso: no bloquea el resto del header
+    }
+  };
 
   useEffect(() => {
     // Check auth in background - buttons show immediately
@@ -33,6 +46,30 @@ export default function Header() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  const handleNotificationClick = async (n: any) => {
+    if (!n.read) {
+      setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
+      client.entities.notifications.update(n.id, { read: true }).catch(() => {});
+    }
+    if (n.link) navigate(n.link);
+  };
+
+  const handleMarkAllRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    try {
+      await client.entities.notifications.update('read-all', {});
+    } catch {
+      // no bloquea la UI si falla
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -94,6 +131,49 @@ export default function Header() {
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
+          {/* Notificaciones */}
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative cursor-pointer">
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-4 min-w-4 px-1 flex items-center justify-center text-[10px] bg-emerald-600 hover:bg-emerald-600">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <div className="flex items-center justify-between px-2 py-1.5">
+                  <span className="text-sm font-semibold">Notificaciones</span>
+                  {unreadCount > 0 && (
+                    <button onClick={handleMarkAllRead} className="text-xs text-emerald-700 hover:underline cursor-pointer">
+                      Marcar todas leídas
+                    </button>
+                  )}
+                </div>
+                <DropdownMenuSeparator />
+                {notifications.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">Sin notificaciones por ahora</p>
+                ) : (
+                  <div className="max-h-96 overflow-y-auto">
+                    {notifications.map((n) => (
+                      <DropdownMenuItem
+                        key={n.id}
+                        onClick={() => handleNotificationClick(n)}
+                        className={`cursor-pointer flex-col items-start gap-0.5 whitespace-normal ${!n.read ? 'bg-emerald-50' : ''}`}
+                      >
+                        <span className="text-sm font-medium">{n.title}</span>
+                        {n.body && <span className="text-xs text-muted-foreground">{n.body}</span>}
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
           {/* Language Switcher */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
