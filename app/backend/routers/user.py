@@ -32,7 +32,10 @@ async def get_public_user(
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return PublicUserResponse(id=user.id, name=user.name, avatar_url=user.avatar_url)
+    # Si no ha puesto un nombre, usamos la parte del email antes de la @ como
+    # respaldo (igual que ya hace el saludo del header) — nunca el email en sí.
+    display_name = user.name or (user.email.split('@')[0] if user.email else None)
+    return PublicUserResponse(id=user.id, name=display_name, avatar_url=user.avatar_url)
 
 
 class UpdateProfileRequest(BaseModel):
