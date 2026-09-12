@@ -20,6 +20,8 @@ const client = createClient();
 export default function CreateJob() {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
+  const [checkingProfile, setCheckingProfile] = useState(true);
+  const [hasProfile, setHasProfile] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     title: '',
@@ -37,11 +39,25 @@ export default function CreateJob() {
 
   useEffect(() => {
     client.auth.me()
-      .then((res) => {
+      .then(async (res) => {
         if (!res?.data) {
           client.auth.toLogin();
-        } else {
-          setUser(res.data);
+          return;
+        }
+        setUser(res.data);
+        // PRUEBA: para publicar hace falta tener el perfil completado
+        // primero (a modo de VentaCofrade). De momento reutilizamos el
+        // formulario de KYC/perfil profesional que ya existe como paso de
+        // "completar información" — habrá que valorar si conviene un
+        // formulario más ligero y genérico para quien solo publica trabajos
+        // y no ofrece servicios.
+        try {
+          const profRes = await client.entities.profiles.queryMine({ limit: 1 });
+          setHasProfile((profRes?.data?.items?.length || 0) > 0);
+        } catch {
+          setHasProfile(false);
+        } finally {
+          setCheckingProfile(false);
         }
       })
       .catch(() => {
@@ -92,6 +108,50 @@ export default function CreateJob() {
   };
 
   if (!user) return null;
+
+  if (checkingProfile) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 py-8 bg-slate-50" />
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!hasProfile) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 py-8 bg-slate-50">
+          <div className="container max-w-2xl">
+            <Button variant="ghost" onClick={() => navigate('/jobs')} className="mb-6 cursor-pointer">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver a trabajos
+            </Button>
+            <Card className="bg-white">
+              <CardContent className="p-10 text-center">
+                <h3 className="text-xl mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                  Completa tu perfil antes de publicar
+                </h3>
+                <p className="text-muted-foreground mb-6">
+                  Para publicar un trabajo necesitamos algunos datos tuyos primero — así los profesionales
+                  saben con quién van a trabajar, y nosotros podemos verificar tu cuenta.
+                </p>
+                <Button
+                  onClick={() => navigate('/kyc')}
+                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 cursor-pointer"
+                >
+                  Completar mi perfil
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

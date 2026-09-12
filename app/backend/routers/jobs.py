@@ -13,6 +13,7 @@ from core.database import get_db
 from services.jobs import JobsService
 from dependencies.auth import get_current_user
 from schemas.auth import UserResponse
+from models.profiles import Profiles
 from models.jobs import Jobs
 from models.subscriptions import Subscriptions
 
@@ -217,6 +218,16 @@ async def create_jobs(
 ):
     """Create a new jobs"""
     logger.debug(f"Creating new jobs with data: {data}")
+
+    # PRUEBA: para publicar hace falta haber completado el perfil primero
+    # (misma idea que el aviso del frontend en /jobs/new). Si alguien se
+    # salta el frontend y llama a la API directamente, esto lo bloquea igual.
+    profile_result = await db.execute(select(Profiles).where(Profiles.user_id == str(current_user.id)))
+    if not profile_result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=403,
+            detail="Completa tu perfil antes de publicar un trabajo.",
+        )
 
     # Plan Free: máximo 3 trabajos publicados por mes natural (ver Precios).
     # Los planes Pro/Empresa activos no tienen límite.
