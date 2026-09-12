@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { createClient } from '@/lib/atomsClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -10,9 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Calendar, Clock, Ruler, DollarSign, Send, ArrowLeft, User, Check, X, Plus, MessageSquare } from 'lucide-react';
+import { MapPin, Calendar, Clock, Ruler, DollarSign, Send, ArrowLeft, Check, X, Plus, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { COUNTRIES, SEED_JOBS } from '@/lib/constants';
+import UserIdentity from '@/components/UserIdentity';
 
 const client = createClient();
 
@@ -27,7 +28,6 @@ export default function JobDetail() {
   const navigate = useNavigate();
   const [job, setJob] = useState<any>(null);
   const [bids, setBids] = useState<any[]>([]);
-  const [bidProfiles, setBidProfiles] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [bidAmount, setBidAmount] = useState('');
@@ -77,23 +77,7 @@ export default function JobDetail() {
     }
     try {
       const res = await client.entities.bids.queryAll({ query: { job_id: Number(id) }, sort: '-created_at' });
-      const items = res?.data?.items || [];
-      setBids(items);
-
-      // Cargar el perfil de cada persona que pujó (para mostrar nombre y
-      // enlazar a su perfil público), uno por user_id distinto.
-      const uniqueUserIds: string[] = Array.from(new Set(items.map((b: any) => b.user_id).filter(Boolean)));
-      const profileEntries = await Promise.all(
-        uniqueUserIds.map(async (uid) => {
-          try {
-            const pRes = await client.entities.profiles.queryAll({ query: { user_id: uid }, limit: 1 });
-            return [uid, pRes?.data?.items?.[0] || null] as const;
-          } catch {
-            return [uid, null] as const;
-          }
-        })
-      );
-      setBidProfiles(Object.fromEntries(profileEntries));
+      setBids(res?.data?.items || []);
     } catch {
       // Failed to load bids
     }
@@ -208,6 +192,26 @@ export default function JobDetail() {
                   </div>
                   <h1 className="text-2xl md:text-3xl mb-6">{job.title}</h1>
 
+                  {!isSeedJob && job.user_id && (
+                    <div className="flex items-center justify-between gap-3 mb-6 pb-6 border-b flex-wrap">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Publicado por</p>
+                        <UserIdentity userId={job.user_id} />
+                      </div>
+                      {!isOwner && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => navigate(`/messages?with=${job.user_id}`)}
+                          className="cursor-pointer"
+                        >
+                          <MessageSquare className="h-4 w-4 mr-1" />
+                          Contactar
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border">
                       <MapPin className="h-5 w-5 text-emerald-600" />
@@ -271,23 +275,12 @@ export default function JobDetail() {
                   {bids.length > 0 ? (
                     <div className="space-y-4">
                       {bids.map((bid) => {
-                        const profile = bidProfiles[bid.user_id];
-                        const bidderName = profile?.display_name || 'Profesional';
                         const status = bid.status || 'pending';
                         return (
                           <div key={bid.id} className="flex items-start gap-4 p-4 rounded-lg bg-slate-50 border">
-                            <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                              <User className="h-5 w-5 text-emerald-700" />
-                            </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2 flex-wrap">
-                                {profile ? (
-                                  <Link to={`/pros/${profile.id}`} className="font-medium text-sm hover:underline text-emerald-700">
-                                    {bidderName}
-                                  </Link>
-                                ) : (
-                                  <span className="font-medium text-sm">{bidderName}</span>
-                                )}
+                                <UserIdentity userId={bid.user_id} size="sm" />
                                 <span className="font-bold text-emerald-700" style={{ fontFamily: 'Poppins, sans-serif' }}>
                                   ${bid.amount?.toLocaleString()} USD
                                 </span>

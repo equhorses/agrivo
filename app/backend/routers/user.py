@@ -8,8 +8,31 @@ from pydantic import BaseModel
 from schemas.auth import UserResponse
 from services.user import UserService
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
+
+
+class PublicUserResponse(BaseModel):
+    id: str
+    name: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
+@router.get("/{user_id}/public", response_model=PublicUserResponse)
+async def get_public_user(
+    user_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Datos básicos y públicos de cualquier usuario (nombre y foto) — para
+    mostrar quién publicó un trabajo o quién puja, sin exponer email ni nada
+    sensible. No hace falta ser el propio usuario para consultarlo."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return PublicUserResponse(id=user.id, name=user.name, avatar_url=user.avatar_url)
 
 
 class UpdateProfileRequest(BaseModel):

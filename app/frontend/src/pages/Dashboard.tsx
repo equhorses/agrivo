@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
   const [myJobs, setMyJobs] = useState<any[]>([]);
   const [myBids, setMyBids] = useState<any[]>([]);
+  const [bidJobs, setBidJobs] = useState<Record<number, any>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,7 +41,25 @@ export default function Dashboard() {
         client.entities.bids.queryMine({ sort: '-created_at', limit: 20 }),
       ]);
       if (jobsRes?.data?.items) setMyJobs(jobsRes.data.items);
-      if (bidsRes?.data?.items) setMyBids(bidsRes.data.items);
+      if (bidsRes?.data?.items) {
+        const bids = bidsRes.data.items;
+        setMyBids(bids);
+
+        // Para cada oferta que envié, necesito el trabajo (título + quién lo
+        // publicó) para poder enlazarlo y para poder escribirle un mensaje.
+        const uniqueJobIds: number[] = Array.from(new Set(bids.map((b: any) => b.job_id).filter(Boolean)));
+        const jobEntries = await Promise.all(
+          uniqueJobIds.map(async (jobId) => {
+            try {
+              const jRes = await client.entities.jobs.queryAll({ query: { id: jobId }, limit: 1 });
+              return [jobId, jRes?.data?.items?.[0] || null] as const;
+            } catch {
+              return [jobId, null] as const;
+            }
+          })
+        );
+        setBidJobs(Object.fromEntries(jobEntries));
+      }
     } catch {
       // Failed to load data
     }
@@ -193,29 +212,55 @@ export default function Dashboard() {
                 </div>
               ) : myBids.length > 0 ? (
                 <div className="space-y-3">
-                  {myBids.map((bid) => (
-                    <Card key={bid.id} className="hover:border-emerald-200 transition-all cursor-pointer bg-white">
-                      <CardContent className="p-5">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-semibold" style={{ fontFamily: 'Poppins, sans-serif' }}>Oferta #{bid.id}</h4>
-                              <Badge variant="outline" className="text-xs">
-                                {bid.status === 'pending' ? 'Pendiente' : bid.status === 'accepted' ? 'Aceptada' : 'Rechazada'}
-                              </Badge>
+                  {myBids.map((bid) => {
+                    const job = bidJobs[bid.job_id];
+                    return (
+                      <Card key={bid.id} className="hover:border-emerald-200 transition-all bg-white">
+                        <CardContent className="p-5">
+                          <div className="flex items-center justify-between gap-3 flex-wrap">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                {job ? (
+                                  <h4
+                                    className="font-semibold hover:underline cursor-pointer"
+                                    style={{ fontFamily: 'Poppins, sans-serif' }}
+                                    onClick={() => navigate(`/jobs/${job.id}`)}
+                                  >
+                                    {job.title}
+                                  </h4>
+                                ) : (
+                                  <h4 className="font-semibold" style={{ fontFamily: 'Poppins, sans-serif' }}>Oferta #{bid.id}</h4>
+                                )}
+                                <Badge variant="outline" className="text-xs">
+                                  {bid.status === 'pending' ? 'Pendiente' : bid.status === 'accepted' ? 'Aceptada' : 'Rechazada'}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                Monto: ${bid.amount?.toLocaleString()} USD
+                                {bid.message && ` · "${bid.message.substring(0, 50)}..."`}
+                              </p>
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                              Monto: ${bid.amount?.toLocaleString()} USD
-                              {bid.message && ` · "${bid.message.substring(0, 50)}..."`}
-                            </p>
+                            <div className="flex items-center gap-3 shrink-0">
+                              {job?.user_id && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="cursor-pointer"
+                                  onClick={() => navigate(`/messages?with=${job.user_id}`)}
+                                >
+                                  <MessageSquare className="h-4 w-4 mr-1" />
+                                  Mensaje
+                                </Button>
+                              )}
+                              <span className="text-sm text-muted-foreground">
+                                {bid.created_at ? new Date(bid.created_at).toLocaleDateString('es') : ''}
+                              </span>
+                            </div>
                           </div>
-                          <span className="text-sm text-muted-foreground shrink-0">
-                            {bid.created_at ? new Date(bid.created_at).toLocaleDateString('es') : ''}
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               ) : (
                 <Card className="bg-white">
