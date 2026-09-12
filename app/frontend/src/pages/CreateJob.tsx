@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { COUNTRIES, CATEGORIES } from '@/lib/constants';
+import { getBackendErrorMessage } from '@/lib/errors';
 
 const client = createClient();
 
@@ -50,7 +51,7 @@ export default function CreateJob() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title || !form.category || !form.country || !form.budget_min) {
+    if (!form.title || !form.category || !form.country || !form.budget_max) {
       toast.error('Completa todos los campos obligatorios');
       return;
     }
@@ -68,8 +69,8 @@ export default function CreateJob() {
           country: form.country,
           location: form.location,
           hectares: form.hectares ? Number(form.hectares) : null,
-          budget_min: Number(form.budget_min),
-          budget_max: form.budget_max ? Number(form.budget_max) : Number(form.budget_min),
+          budget_min: form.budget_min ? Number(form.budget_min) : null,
+          budget_max: Number(form.budget_max),
           contract_type: form.contract_type,
           status: 'open',
           bidding_ends_at: noDeadline || !form.bidding_ends_at
@@ -79,8 +80,8 @@ export default function CreateJob() {
       });
       toast.success('¡Trabajo publicado exitosamente!');
       navigate('/jobs');
-    } catch {
-      toast.error('Error al publicar el trabajo');
+    } catch (err: any) {
+      toast.error(getBackendErrorMessage(err, 'Error al publicar el trabajo'));
     } finally {
       setSubmitting(false);
     }
@@ -226,7 +227,7 @@ export default function CreateJob() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="budget_min">Presupuesto mín. (USD) *</Label>
+                    <Label htmlFor="budget_min">Presupuesto mín. (USD, opcional)</Label>
                     <Input
                       id="budget_min"
                       type="number"
@@ -237,7 +238,7 @@ export default function CreateJob() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="budget_max">Presupuesto máx. (USD)</Label>
+                    <Label htmlFor="budget_max">Presupuesto máx. (USD) *</Label>
                     <Input
                       id="budget_max"
                       type="number"

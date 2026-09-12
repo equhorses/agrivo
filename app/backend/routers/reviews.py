@@ -23,10 +23,10 @@ router = APIRouter(prefix="/api/v1/entities/reviews", tags=["reviews"])
 class ReviewsData(BaseModel):
     """Entity data schema (for create/update)"""
     professional_id: str
-    job_id: int = None
+    job_id: Optional[int] = None
     rating: int
     comment: str
-    reviewer_name: str = None
+    reviewer_name: Optional[str] = None
 
 
 class ReviewsUpdateData(BaseModel):

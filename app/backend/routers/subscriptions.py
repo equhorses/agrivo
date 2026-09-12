@@ -23,8 +23,8 @@ router = APIRouter(prefix="/api/v1/entities/subscriptions", tags=["subscriptions
 class SubscriptionsData(BaseModel):
     """Entity data schema (for create/update)"""
     plan: str
-    status: str = None
-    stripe_session_id: str = None
+    status: Optional[str] = None
+    stripe_session_id: Optional[str] = None
 
 
 class SubscriptionsUpdateData(BaseModel):

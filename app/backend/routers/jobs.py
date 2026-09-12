@@ -26,15 +26,15 @@ router = APIRouter(prefix="/api/v1/entities/jobs", tags=["jobs"])
 class JobsData(BaseModel):
     """Entity data schema (for create/update)"""
     title: str
-    description: str = None
+    description: Optional[str] = None
     category: str
     country: str
     location: str
-    hectares: float = None
-    budget_min: float = None
-    budget_max: float = None
+    hectares: Optional[float] = None
+    budget_min: Optional[float] = None
+    budget_max: Optional[float] = None
     contract_type: str
-    status: str = None
+    status: Optional[str] = None
     bidding_ends_at: Optional[datetime] = None  # NULL = sin límite de tiempo
 
 

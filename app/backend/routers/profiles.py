@@ -25,15 +25,15 @@ class ProfilesData(BaseModel):
     """Entity data schema (for create/update)"""
     display_name: str
     role: str
-    country: str = None
-    description: str = None
-    avatar_url: str = None
-    rating: float = None
-    jobs_completed: int = None
-    service_radius_km: int = None
-    verified_kyc: bool = None
-    categories: str = None
-    language: str = None
+    country: Optional[str] = None
+    description: Optional[str] = None
+    avatar_url: Optional[str] = None
+    rating: Optional[float] = None
+    jobs_completed: Optional[int] = None
+    service_radius_km: Optional[int] = None
+    verified_kyc: Optional[bool] = None
+    categories: Optional[str] = None
+    language: Optional[str] = None
 
 
 class ProfilesUpdateData(BaseModel):

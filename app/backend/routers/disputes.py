@@ -25,9 +25,9 @@ class DisputesData(BaseModel):
     job_title: str
     reason: str
     description: str
-    amount_disputed: float = None
+    amount_disputed: Optional[float] = None
     status: str
-    resolution: str = None
+    resolution: Optional[str] = None
 
 
 class DisputesUpdateData(BaseModel):

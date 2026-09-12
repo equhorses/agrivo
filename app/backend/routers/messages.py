@@ -23,8 +23,8 @@ router = APIRouter(prefix="/api/v1/entities/messages", tags=["messages"])
 class MessagesData(BaseModel):
     """Entity data schema (for create/update)"""
     job_id: Optional[int] = None
-    sender_id: str = None
-    receiver_id: str = None
+    sender_id: Optional[str] = None
+    receiver_id: Optional[str] = None
     content: str
 
 

@@ -25,15 +25,15 @@ class Kyc_verificationsData(BaseModel):
     full_name: str
     document_type: str
     document_number: str
-    country: str = None
-    address: str = None
-    specialty: str = None
-    years_experience: int = None
-    certifications: str = None
-    description: str = None
-    document_photo_url: str = None
+    country: Optional[str] = None
+    address: Optional[str] = None
+    specialty: Optional[str] = None
+    years_experience: Optional[int] = None
+    certifications: Optional[str] = None
+    description: Optional[str] = None
+    document_photo_url: Optional[str] = None
     status: str
-    plan: str = None
+    plan: Optional[str] = None
 
 
 class Kyc_verificationsUpdateData(BaseModel):

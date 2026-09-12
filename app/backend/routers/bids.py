@@ -42,8 +42,8 @@ class BidsData(BaseModel):
     """Entity data schema (for create/update)"""
     job_id: int
     amount: float
-    message: str = None
-    status: str = None
+    message: Optional[str] = None
+    status: Optional[str] = None
 
 
 class BidsUpdateData(BaseModel):
