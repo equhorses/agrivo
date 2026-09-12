@@ -215,7 +215,10 @@ async def create_bids(
         if not result:
             raise HTTPException(status_code=400, detail="Failed to create bids")
 
-        # Avisar al dueño del trabajo de que ha llegado una oferta nueva.
+        # Avisar al dueño del trabajo de que ha llegado una oferta nueva, y
+        # que el mensaje opcional de la oferta quede como una conversación
+        # real en Mensajes (antes solo se guardaba dentro de la puja y nunca
+        # se veía en el mensajero).
         try:
             job_result = await db.execute(select(Jobs).where(Jobs.id == result.job_id))
             job = job_result.scalar_one_or_none()
@@ -228,6 +231,11 @@ async def create_bids(
                     body=f"${result.amount:,.0f} USD",
                     link=f"/jobs/{job.id}",
                 )
+                if result.message and result.message.strip():
+                    _auto_message(
+                        db, job_id=job.id, sender_id=str(current_user.id), receiver_id=job.user_id,
+                        content=result.message.strip(),
+                    )
                 await db.commit()
         except Exception as notify_err:
             logger.warning(f"No se pudo crear la notificación de nueva oferta: {notify_err}")

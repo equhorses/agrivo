@@ -219,10 +219,12 @@ export default function Header() {
                   <AlertTriangle className="h-4 w-4 mr-2" />
                   Disputas
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer">
-                  <Shield className="h-4 w-4 mr-2" />
-                  Admin Panel
-                </DropdownMenuItem>
+                {['admin', 'marketing', 'seguridad', 'moderacion', 'soporte'].includes(user.role) && (
+                  <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer">
+                    <Shield className="h-4 w-4 mr-2" />
+                    Admin Panel
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
                   <LogOut className="h-4 w-4 mr-2" />

@@ -281,11 +281,15 @@ export default function Admin() {
   const [newStaffEmail, setNewStaffEmail] = useState('');
   const [newStaffRole, setNewStaffRole] = useState('soporte');
 
+  const STAFF_ROLES = ['admin', 'marketing', 'seguridad', 'moderacion', 'soporte'];
+
   useEffect(() => {
     client.auth.me()
       .then((res) => {
         if (!res?.data) {
           client.auth.toLogin();
+        } else if (!STAFF_ROLES.includes(res.data.role)) {
+          navigate('/');
         } else {
           setUser(res.data);
           loadData();

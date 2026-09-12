@@ -60,7 +60,7 @@ class KycActionResponse(BaseModel):
 
 @router.get("/kyc/pending", response_model=KycListResponse)
 async def get_pending_kyc(
-    current_user: UserResponse = Depends(get_current_user),
+    current_user: UserResponse = Depends(require_roles("admin", "soporte")),
     db: AsyncSession = Depends(get_db),
 ):
     """Get all pending KYC verifications for admin review"""
@@ -95,7 +95,7 @@ async def get_pending_kyc(
 
 @router.get("/kyc/all", response_model=KycListResponse)
 async def get_all_kyc(
-    current_user: UserResponse = Depends(get_current_user),
+    current_user: UserResponse = Depends(require_roles("admin", "soporte")),
     db: AsyncSession = Depends(get_db),
 ):
     """Get all KYC verifications"""
@@ -129,7 +129,7 @@ async def get_all_kyc(
 @router.post("/kyc/action", response_model=KycActionResponse)
 async def kyc_action(
     data: KycActionRequest,
-    current_user: UserResponse = Depends(get_current_user),
+    current_user: UserResponse = Depends(require_roles("admin", "soporte")),
     db: AsyncSession = Depends(get_db),
 ):
     """Approve or reject a KYC verification and send email notification"""
@@ -181,7 +181,7 @@ async def send_notification(
     to: str,
     subject: str,
     html: str,
-    current_user: UserResponse = Depends(get_current_user),
+    current_user: UserResponse = Depends(get_admin_user),
 ):
     """Generic endpoint to send email notifications"""
     result = await send_email(to, subject, html)

@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Calendar, Clock, Ruler, DollarSign, Send, ArrowLeft, User, Check, X, Plus } from 'lucide-react';
+import { MapPin, Calendar, Clock, Ruler, DollarSign, Send, ArrowLeft, User, Check, X, Plus, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { COUNTRIES, SEED_JOBS } from '@/lib/constants';
 
@@ -306,26 +306,39 @@ export default function JobDetail() {
                                   {BID_STATUS_LABEL[status] || status}
                                 </Badge>
                               </div>
-                              {isOwner && status === 'pending' && (
+                              {isOwner && (
                                 <div className="flex gap-2 mt-3">
-                                  <Button
-                                    size="sm"
-                                    disabled={decidingBidId === bid.id}
-                                    onClick={() => handleDecideBid(bid.id, 'accept')}
-                                    className="bg-emerald-600 hover:bg-emerald-700 cursor-pointer"
-                                  >
-                                    <Check className="h-4 w-4 mr-1" />
-                                    Aceptar
-                                  </Button>
+                                  {status === 'pending' && (
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        disabled={decidingBidId === bid.id}
+                                        onClick={() => handleDecideBid(bid.id, 'accept')}
+                                        className="bg-emerald-600 hover:bg-emerald-700 cursor-pointer"
+                                      >
+                                        <Check className="h-4 w-4 mr-1" />
+                                        Aceptar
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        disabled={decidingBidId === bid.id}
+                                        onClick={() => handleDecideBid(bid.id, 'reject')}
+                                        className="cursor-pointer"
+                                      >
+                                        <X className="h-4 w-4 mr-1" />
+                                        Rechazar
+                                      </Button>
+                                    </>
+                                  )}
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    disabled={decidingBidId === bid.id}
-                                    onClick={() => handleDecideBid(bid.id, 'reject')}
+                                    onClick={() => navigate(`/messages?with=${bid.user_id}`)}
                                     className="cursor-pointer"
                                   >
-                                    <X className="h-4 w-4 mr-1" />
-                                    Rechazar
+                                    <MessageSquare className="h-4 w-4 mr-1" />
+                                    Responder
                                   </Button>
                                 </div>
                               )}

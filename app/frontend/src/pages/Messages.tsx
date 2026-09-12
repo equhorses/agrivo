@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { createClient } from '@/lib/atomsClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -29,6 +30,7 @@ interface Message {
 }
 
 export default function Messages() {
+  const [searchParams] = useSearchParams();
   const [user, setUser] = useState<any>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConv, setSelectedConv] = useState<string | null>(null);
@@ -43,13 +45,13 @@ export default function Messages() {
           client.auth.toLogin();
         } else {
           setUser(res.data);
-          loadConversations();
+          loadConversations(res.data.id);
         }
       })
       .catch(() => client.auth.toLogin());
   }, []);
 
-  const loadConversations = async () => {
+  const loadConversations = async (myId: string) => {
     try {
       const res = await client.entities.messages.queryMine({ sort: '-created_at', limit: 50 });
       const msgs = res?.data?.items || [];
@@ -57,28 +59,44 @@ export default function Messages() {
       // Group by conversation partner
       const convMap = new Map<string, Conversation>();
       msgs.forEach((msg: any) => {
-        const partnerId = msg.receiver_id === user?.id ? msg.sender_id : msg.receiver_id;
-        const partnerName = msg.receiver_id === user?.id ? (msg.sender_name || 'Usuario') : (msg.receiver_name || 'Usuario');
-        if (!convMap.has(partnerId)) {
-          convMap.set(partnerId, {
-            id: partnerId,
-            other_name: partnerName,
-            last_message: msg.content,
-            last_time: msg.created_at,
-            unread: 0,
-          });
-        }
+        const partnerId = msg.sender_id === myId ? msg.receiver_id : msg.sender_id;
+        const partnerName = msg.sender_id === myId ? (msg.receiver_name || 'Usuario') : (msg.sender_name || 'Usuario');
+        if (!partnerId || convMap.has(partnerId)) return;
+        convMap.set(partnerId, {
+          id: partnerId,
+          other_name: partnerName,
+          last_message: msg.content,
+          last_time: msg.created_at,
+          unread: 0,
+        });
       });
 
-      setConversations(Array.from(convMap.values()));
+      let list = Array.from(convMap.values());
+
+      // Si llegamos desde "Responder" en una oferta y esa persona aún no
+      // tiene conversación (nunca escribió nada), la añadimos igualmente
+      // para poder empezar a escribirle.
+      const withId = searchParams.get('with');
+      if (withId && withId !== myId && !convMap.has(withId)) {
+        list = [{ id: withId, other_name: 'Usuario', last_message: '', last_time: '', unread: 0 }, ...list];
+      }
+
+      setConversations(list);
+      if (withId) loadMessages(withId, myId);
     } catch {
       // No messages yet
+      const withId = searchParams.get('with');
+      if (withId) {
+        setConversations([{ id: withId, other_name: 'Usuario', last_message: '', last_time: '', unread: 0 }]);
+        loadMessages(withId, myId);
+      }
     }
     setLoading(false);
   };
 
-  const loadMessages = async (convId: string) => {
+  const loadMessages = async (convId: string, myId?: string) => {
     setSelectedConv(convId);
+    const mine = myId || user?.id;
     try {
       const res = await client.entities.messages.queryMine({
         sort: 'created_at',
@@ -89,7 +107,7 @@ export default function Messages() {
         .filter((m: any) => m.sender_id === convId || m.receiver_id === convId)
         .map((m: any) => ({
           ...m,
-          is_mine: m.sender_id !== convId,
+          is_mine: m.sender_id === mine,
         }));
       setMessages(filtered);
     } catch {
