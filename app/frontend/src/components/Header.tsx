@@ -211,6 +211,10 @@ export default function Header() {
                   <LayoutDashboard className="h-4 w-4 mr-2" />
                   {t('nav.dashboard', locale)}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/account')} className="cursor-pointer">
+                  <User className="h-4 w-4 mr-2" />
+                  Mi cuenta
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/messages')} className="cursor-pointer">
                   <MessageSquare className="h-4 w-4 mr-2" />
                   {t('nav.messages', locale)}
@@ -295,6 +299,9 @@ export default function Header() {
                 <>
                   <Link to="/dashboard" onClick={() => setMobileOpen(false)} className="px-3 py-2.5 text-base font-medium rounded-md hover:bg-muted/50 cursor-pointer">
                     {t('nav.dashboard', locale)}
+                  </Link>
+                  <Link to="/account" onClick={() => setMobileOpen(false)} className="px-3 py-2.5 text-base font-medium rounded-md hover:bg-muted/50 cursor-pointer">
+                    Mi cuenta
                   </Link>
                   <Link to="/messages" onClick={() => setMobileOpen(false)} className="px-3 py-2.5 text-base font-medium rounded-md hover:bg-muted/50 cursor-pointer">
                     {t('nav.messages', locale)}

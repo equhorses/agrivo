@@ -34,6 +34,8 @@ class ProfilesData(BaseModel):
     verified_kyc: Optional[bool] = None
     categories: Optional[str] = None
     language: Optional[str] = None
+    phone: Optional[str] = None
+    currency: Optional[str] = None
 
 
 class ProfilesUpdateData(BaseModel):
@@ -49,6 +51,8 @@ class ProfilesUpdateData(BaseModel):
     verified_kyc: Optional[bool] = None
     categories: Optional[str] = None
     language: Optional[str] = None
+    phone: Optional[str] = None
+    currency: Optional[str] = None
 
 
 class ProfilesResponse(BaseModel):
@@ -65,6 +69,8 @@ class ProfilesResponse(BaseModel):
     verified_kyc: Optional[bool] = None
     categories: Optional[str] = None
     language: Optional[str] = None
+    phone: Optional[str] = None
+    currency: Optional[str] = None
     user_id: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

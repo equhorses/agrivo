@@ -45,12 +45,9 @@ export default function CreateJob() {
           return;
         }
         setUser(res.data);
-        // PRUEBA: para publicar hace falta tener el perfil completado
-        // primero (a modo de VentaCofrade). De momento reutilizamos el
-        // formulario de KYC/perfil profesional que ya existe como paso de
-        // "completar información" — habrá que valorar si conviene un
-        // formulario más ligero y genérico para quien solo publica trabajos
-        // y no ofrece servicios.
+        // Para publicar hace falta tener el perfil completado primero (a
+        // modo de VentaCofrade). Se hace en /account, con un formulario
+        // ligero (nombre, país, teléfono, foto) — no el de KYC profesional.
         try {
           const profRes = await client.entities.profiles.queryMine({ limit: 1 });
           setHasProfile((profRes?.data?.items?.length || 0) > 0);
@@ -139,7 +136,7 @@ export default function CreateJob() {
                   saben con quién van a trabajar, y nosotros podemos verificar tu cuenta.
                 </p>
                 <Button
-                  onClick={() => navigate('/kyc')}
+                  onClick={() => navigate('/account')}
                   className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 cursor-pointer"
                 >
                   Completar mi perfil
