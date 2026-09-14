@@ -11,6 +11,7 @@ from core.security import hash_password, verify_password
 from fastapi import HTTPException, status
 from models.auth import User
 from models.invitations import Invitation
+from models.notifications import Notifications
 from models.platform_settings import PlatformSettings
 from models.subscriptions import Subscriptions
 from services.email import send_welcome_email
@@ -90,6 +91,13 @@ class AuthService:
             age_confirmed_at=datetime.now(timezone.utc),
         )
         self.db.add(user)
+        self.db.add(Notifications(
+            user_id=user.id,
+            type="welcome",
+            title="¡Bienvenido a Agrivo!",
+            body="Explora trabajos disponibles o completa tu perfil para empezar a publicar y ofertar.",
+            link="/jobs",
+        ))
         await self.db.commit()
         await self.db.refresh(user)
         await send_welcome_email(to_email=user.email, name=user.name)
@@ -178,6 +186,13 @@ class AuthService:
                 age_confirmed_at=datetime.now(timezone.utc),
             )
             self.db.add(user)
+            self.db.add(Notifications(
+                user_id=user.id,
+                type="welcome",
+                title="¡Bienvenido a Agrivo!",
+                body="Explora trabajos disponibles o completa tu perfil para empezar a publicar y ofertar.",
+                link="/jobs",
+            ))
 
         await self.db.commit()
         await self.db.refresh(user)

@@ -268,6 +268,9 @@ export default function Publicidad() {
                 </div>
                 <div className="space-y-2">
                   <Label>Imagen del banner</Label>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Tamaño recomendado: 1200 × 300 px (horizontal), JPG o PNG, máx. 2 MB.
+                  </p>
                   {imageUrl && (
                     <img src={imageUrl} alt="Vista previa" className="w-full max-h-32 object-cover rounded-md mb-2" />
                   )}
@@ -310,6 +313,13 @@ export default function Publicidad() {
                     Pagar y reservar hueco
                   </Button>
                 )}
+
+                <p className="text-xs text-muted-foreground text-center">
+                  ¿Algún problema con tu reserva o el pago?{' '}
+                  <a href="mailto:soporte@agrivo.com" className="text-emerald-700 hover:underline">
+                    Escríbenos a soporte@agrivo.com
+                  </a>
+                </p>
               </CardContent>
             </Card>
           )}

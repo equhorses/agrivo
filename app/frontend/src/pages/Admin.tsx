@@ -8,8 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { CheckCircle, XCircle, Clock, Shield, FileText, User, Megaphone } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
+import { CheckCircle, XCircle, Clock, Shield, FileText, User, Megaphone, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 
 const client = createClient();
@@ -263,6 +267,9 @@ export default function Admin() {
   const [newInviteMonths, setNewInviteMonths] = useState(1);
   const [conversations, setConversations] = useState<AdminConversation[]>([]);
   const [openThreadJobId, setOpenThreadJobId] = useState<number | 'direct' | null>(null);
+  const [messageTarget, setMessageTarget] = useState<{ id: string; label: string } | null>(null);
+  const [messageDraft, setMessageDraft] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
   const [threadMessages, setThreadMessages] = useState<AdminMessage[]>([]);
   const [threadLoading, setThreadLoading] = useState(false);
   const [slotSaving, setSlotSaving] = useState<string | null>(null);
@@ -493,6 +500,23 @@ export default function Admin() {
       toast.error('No se pudo borrar el mensaje');
     }
     setProcessing(null);
+  };
+
+  const handleSendAdminMessage = async () => {
+    if (!messageTarget || !messageDraft.trim()) return;
+    setSendingMessage(true);
+    try {
+      await client.apiCall.invoke('/api/v1/admin/messages/send', {
+        receiver_id: messageTarget.id, content: messageDraft.trim(),
+      }, 'POST');
+      toast.success(`Mensaje enviado a ${messageTarget.label}`);
+      setMessageTarget(null);
+      setMessageDraft('');
+      loadData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || 'No se pudo enviar el mensaje');
+    }
+    setSendingMessage(false);
   };
 
   const handleBanProfessional = async (p: AdminProfessional) => {
@@ -766,6 +790,9 @@ export default function Admin() {
                           : u.account_status === 'suspended' ? 'bg-amber-100 text-amber-800'
                           : 'bg-emerald-100 text-emerald-800'
                         }>{u.account_status}</Badge>
+                        <Button size="sm" variant="outline" className="cursor-pointer" onClick={() => setMessageTarget({ id: u.id, label: u.name || u.email })}>
+                          <MessageSquare className="h-3.5 w-3.5 mr-1" />Mensaje
+                        </Button>
                         <Button size="sm" variant="outline" disabled={processing === u.id} className="cursor-pointer" onClick={() => handleBanToggle(u)}>
                           {u.account_status === 'banned' ? 'Desbanear' : 'Banear'}
                         </Button>
@@ -1269,6 +1296,29 @@ export default function Admin() {
           </Tabs>
         </div>
       </main>
+
+      <Dialog open={!!messageTarget} onOpenChange={(open) => !open && setMessageTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mensaje a {messageTarget?.label}</DialogTitle>
+            <DialogDescription>
+              Le llegará como "Equipo Agrivo" en su bandeja de Mensajes, y le avisa una notificación.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={messageDraft}
+            onChange={(e) => setMessageDraft(e.target.value)}
+            placeholder="Escribe tu mensaje..."
+            rows={5}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMessageTarget(null)} className="cursor-pointer">Cancelar</Button>
+            <Button disabled={sendingMessage || !messageDraft.trim()} onClick={handleSendAdminMessage} className="cursor-pointer">
+              {sendingMessage ? 'Enviando...' : 'Enviar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

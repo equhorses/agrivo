@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from services.jobs import JobsService
-from dependencies.auth import get_current_user
+from dependencies.auth import get_current_user, STAFF_ROLES
 from schemas.auth import UserResponse
 from models.profiles import Profiles
 from models.jobs import Jobs
@@ -219,15 +219,17 @@ async def create_jobs(
     """Create a new jobs"""
     logger.debug(f"Creating new jobs with data: {data}")
 
-    # PRUEBA: para publicar hace falta haber completado el perfil primero
-    # (misma idea que el aviso del frontend en /jobs/new). Si alguien se
-    # salta el frontend y llama a la API directamente, esto lo bloquea igual.
-    profile_result = await db.execute(select(Profiles).where(Profiles.user_id == str(current_user.id)))
-    if not profile_result.scalar_one_or_none():
-        raise HTTPException(
-            status_code=403,
-            detail="Completa tu perfil antes de publicar un trabajo.",
-        )
+    # Para publicar hace falta haber completado el perfil primero (misma
+    # idea que el aviso del frontend en /jobs/new) — salvo el equipo de
+    # Agrivo (staff/admin), que no tiene por qué tener un perfil de cara
+    # al público para poder gestionar la plataforma.
+    if current_user.role not in STAFF_ROLES:
+        profile_result = await db.execute(select(Profiles).where(Profiles.user_id == str(current_user.id)))
+        if not profile_result.scalar_one_or_none():
+            raise HTTPException(
+                status_code=403,
+                detail="Completa tu perfil antes de publicar un trabajo.",
+            )
 
     # Plan Free: máximo 3 trabajos publicados por mes natural (ver Precios).
     # Los planes Pro/Empresa activos no tienen límite.

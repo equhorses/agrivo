@@ -1,7 +1,7 @@
 from typing import Optional
 
 from core.database import get_db
-from dependencies.auth import get_current_user
+from dependencies.auth import get_current_user, STAFF_ROLES
 from fastapi import APIRouter, Depends, HTTPException, status
 from models.auth import User
 from pydantic import BaseModel
@@ -32,6 +32,13 @@ async def get_public_user(
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # El equipo de Agrivo (staff/admin) aparece siempre como "Equipo Agrivo"
+    # de cara al público, nunca con su nombre real ni foto personal — y no
+    # depende de que hayan rellenado ningún perfil.
+    if user.role in STAFF_ROLES:
+        return PublicUserResponse(id=user.id, name="Equipo Agrivo", avatar_url=None)
+
     # Si no ha puesto un nombre, usamos la parte del email antes de la @ como
     # respaldo (igual que ya hace el saludo del header) — nunca el email en sí.
     display_name = user.name or (user.email.split('@')[0] if user.email else None)

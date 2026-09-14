@@ -71,6 +71,7 @@ class ProfilesResponse(BaseModel):
     language: Optional[str] = None
     phone: Optional[str] = None
     currency: Optional[str] = None
+    plan: Optional[str] = None  # calculado a partir de la suscripción activa, no una columna guardada
     user_id: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -196,6 +197,9 @@ async def query_profiless_all(
                 for s in subs_result.scalars().all():
                     tier_by_user_id[s.user_id] = 2 if s.plan == "enterprise" else (1 if s.plan == "pro" else 0)
                 items.sort(key=lambda it: -tier_by_user_id.get(getattr(it, "user_id", None), 0))
+                for it in items:
+                    tier = tier_by_user_id.get(getattr(it, "user_id", None), 0)
+                    it.plan = "enterprise" if tier == 2 else ("pro" if tier == 1 else None)
                 result["items"] = items
 
         return result

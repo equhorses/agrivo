@@ -25,6 +25,7 @@ from models.reviews import Reviews
 from models.profiles import Profiles
 from models.disputes import Disputes
 from models.messages import Messages
+from models.notifications import Notifications
 from models.audit import AuditLog, LoginAttempt
 from models.invitations import Invitation
 from models.platform_settings import PlatformSettings
@@ -1037,6 +1038,19 @@ async def cancel_bid_admin(
     if not bid:
         raise HTTPException(status_code=404, detail="Puja no encontrada")
     bid.status = "cancelled"
+
+    # Avisar a quien pujó — viene del equipo de Agrivo, no del dueño del
+    # trabajo, así que es una notificación del sistema, no un mensaje suyo.
+    job_result = await db.execute(select(Jobs).where(Jobs.id == bid.job_id))
+    job = job_result.scalar_one_or_none()
+    db.add(Notifications(
+        user_id=bid.user_id,
+        type="bid_cancelled",
+        title=f'Tu oferta para "{job.title if job else "un trabajo"}" fue anulada',
+        body="El equipo de Agrivo ha anulado esta oferta. Si crees que es un error, contáctanos.",
+        link=f"/jobs/{bid.job_id}",
+    ))
+
     await db.commit()
     await db.refresh(bid)
     await log_admin_action(
@@ -1361,6 +1375,55 @@ async def _build_admin_message_thread(messages, db: AsyncSession):
         )
         for m in messages
     ]
+
+
+class AdminSendMessageRequest(BaseModel):
+    receiver_id: str
+    content: str
+
+
+@router.post("/messages/send", response_model=AdminMessageResponse)
+async def send_message_admin(
+    payload: AdminSendMessageRequest,
+    current_user: UserResponse = Depends(get_staff_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """El equipo de Agrivo escribe primero a un usuario (no moderar una
+    conversación ya existente, sino arrancar una). Aparece de cara al
+    usuario como "Equipo Agrivo", y le llega notificación."""
+    if not payload.content.strip():
+        raise HTTPException(status_code=400, detail="El mensaje no puede estar vacío")
+
+    receiver_result = await db.execute(select(User).where(User.id == payload.receiver_id))
+    receiver = receiver_result.scalar_one_or_none()
+    if not receiver:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    message = Messages(
+        job_id=None, sender_id=str(current_user.id), receiver_id=payload.receiver_id,
+        content=payload.content.strip(), user_id=str(current_user.id),
+    )
+    db.add(message)
+
+    db.add(Notifications(
+        user_id=payload.receiver_id,
+        type="admin_message",
+        title="Tienes un mensaje del equipo de Agrivo",
+        body=payload.content.strip()[:120],
+        link="/messages",
+    ))
+
+    await db.commit()
+    await db.refresh(message)
+    await log_admin_action(
+        db, current_user.id, current_user.email, "send_message",
+        target=payload.receiver_id, details=payload.content.strip()[:120],
+    )
+    return AdminMessageResponse(
+        id=message.id, job_id=None, sender_id=message.sender_id, sender_email=current_user.email,
+        receiver_id=message.receiver_id, receiver_email=receiver.email,
+        content=message.content, created_at=message.created_at,
+    )
 
 
 @router.get("/messages/job/{job_id}", response_model=List[AdminMessageResponse])

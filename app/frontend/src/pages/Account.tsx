@@ -168,6 +168,7 @@ export default function Account() {
   if (!user) return null;
 
   const plan = subscription?.plan || 'free';
+  const isStaff = ['admin', 'marketing', 'seguridad', 'moderacion', 'soporte'].includes(user.role);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -189,7 +190,7 @@ export default function Account() {
               <Card className="bg-white">
                 <CardHeader><CardTitle>Datos de tu perfil</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  {!profileId && (
+                  {!profileId && !isStaff && (
                     <p className="text-sm text-muted-foreground bg-amber-50 border border-amber-200 rounded-lg p-3">
                       Todavía no has completado tu perfil. Rellena esto y guarda para poder publicar trabajos.
                     </p>
@@ -315,7 +316,7 @@ export default function Account() {
                             <p className="font-medium">{job.title}</p>
                             <p className="text-xs text-muted-foreground">{job.category}</p>
                           </div>
-                          <Badge variant="outline">{job.status === 'open' ? 'Abierto' : 'En Progreso'}</Badge>
+                          <Badge variant="outline">{job.status === 'open' ? 'Abierto' : job.status === 'expired' ? 'Expirado' : 'En Progreso'}</Badge>
                         </div>
                       ))}
                     </div>

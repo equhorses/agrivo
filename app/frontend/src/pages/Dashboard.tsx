@@ -168,8 +168,12 @@ export default function Dashboard() {
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               <h4 className="font-semibold truncate" style={{ fontFamily: 'Poppins, sans-serif' }}>{job.title}</h4>
-                              <Badge className={`text-xs ${job.status === 'open' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100' : 'bg-amber-100 text-amber-800 hover:bg-amber-100'}`}>
-                                {job.status === 'open' ? 'Abierto' : 'En Progreso'}
+                              <Badge className={`text-xs ${
+                                job.status === 'open' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
+                                : job.status === 'expired' ? 'bg-slate-200 text-slate-700 hover:bg-slate-200'
+                                : 'bg-amber-100 text-amber-800 hover:bg-amber-100'
+                              }`}>
+                                {job.status === 'open' ? 'Abierto' : job.status === 'expired' ? 'Expirado' : 'En Progreso'}
                               </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground">

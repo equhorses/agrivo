@@ -45,6 +45,13 @@ export default function CreateJob() {
           return;
         }
         setUser(res.data);
+        // El equipo de Agrivo (staff/admin) no necesita perfil para
+        // publicar — solo aplica a cuentas normales.
+        if (['admin', 'marketing', 'seguridad', 'moderacion', 'soporte'].includes(res.data.role)) {
+          setHasProfile(true);
+          setCheckingProfile(false);
+          return;
+        }
         // Para publicar hace falta tener el perfil completado primero (a
         // modo de VentaCofrade). Se hace en /account, con un formulario
         // ligero (nombre, país, teléfono, foto) — no el de KYC profesional.

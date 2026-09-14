@@ -186,8 +186,12 @@ export default function JobDetail() {
                     <Badge variant="outline">
                       {job.contract_type === 'reverse_auction' ? 'Subasta Inversa' : 'Precio Fijo'}
                     </Badge>
-                    <Badge className={`${job.status === 'open' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100' : 'bg-amber-100 text-amber-800 hover:bg-amber-100'}`}>
-                      {job.status === 'open' ? 'Abierto' : 'En Progreso'}
+                    <Badge className={`${
+                      job.status === 'open' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
+                      : job.status === 'expired' ? 'bg-slate-200 text-slate-700 hover:bg-slate-200'
+                      : 'bg-amber-100 text-amber-800 hover:bg-amber-100'
+                    }`}>
+                      {job.status === 'open' ? 'Abierto' : job.status === 'expired' ? 'Expirado' : 'En Progreso'}
                     </Badge>
                   </div>
                   <h1 className="text-2xl md:text-3xl mb-6">{job.title}</h1>
