@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Star, MapPin, ArrowRight, Shield, Globe, Zap, MessageSquare } from 'lucide-react';
 import { PlanBadge } from '@/components/Badges';
 import { BRAND, COUNTRIES, CATEGORIES, SEED_PROFESSIONALS, SEED_JOBS } from '@/lib/constants';
+import { formatAmount, useMyCurrency } from '@/lib/currency';
 import { toast } from 'sonner';
 
 const client = createClient();
@@ -57,6 +58,7 @@ export default function Index() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [professionals, setProfessionals] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
+  const myCurrency = useMyCurrency();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -290,7 +292,7 @@ export default function Index() {
                           {job.location}
                         </span>
                         <span className="font-bold text-emerald-700" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                          ${job.budget_min?.toLocaleString()}
+                          {formatAmount(job.budget_min, myCurrency)}
                         </span>
                       </div>
                     </CardContent>

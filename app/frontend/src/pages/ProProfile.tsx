@@ -4,6 +4,7 @@ import { createClient } from '@/lib/atomsClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Star, MapPin, Briefcase, Calendar, MessageSquare, ArrowLeft, Award } from 'lucide-react';
@@ -20,6 +21,9 @@ export default function ProProfile() {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [respondingTo, setRespondingTo] = useState<number | null>(null);
+  const [responseDraft, setResponseDraft] = useState('');
+  const [submittingResponse, setSubmittingResponse] = useState(false);
 
   useEffect(() => {
     client.auth.me()
@@ -43,6 +47,7 @@ export default function ProProfile() {
       const res = await client.entities.profiles.queryAll({ query: { id: Number(id) }, limit: 1 });
       if (res?.data?.items?.[0]) {
         setPro(res.data.items[0]);
+        client.apiCall.invoke(`/api/v1/entities/profiles/${id}/view`, {}, 'POST').catch(() => {});
       }
     } catch {
       // Not found
@@ -58,6 +63,22 @@ export default function ProProfile() {
       }
     } catch {
       // Reviews entity might not exist yet
+    }
+  };
+
+  const handleSubmitResponse = async (reviewId: number) => {
+    if (!responseDraft.trim()) return;
+    setSubmittingResponse(true);
+    try {
+      await client.apiCall.invoke(`/api/v1/entities/reviews/${reviewId}/respond`, { response: responseDraft.trim() }, 'POST');
+      toast.success('Respuesta publicada');
+      setRespondingTo(null);
+      setResponseDraft('');
+      loadReviews();
+    } catch {
+      toast.error('No se pudo publicar la respuesta');
+    } finally {
+      setSubmittingResponse(false);
     }
   };
 
@@ -206,6 +227,40 @@ export default function ProProfile() {
                           </div>
                           <p className="text-sm text-muted-foreground">{review.comment}</p>
                           <p className="text-xs text-muted-foreground mt-1">— {review.reviewer_name || 'Cliente'}</p>
+
+                          {review.professional_response && (
+                            <div className="bg-white border rounded-lg p-3 mt-3">
+                              <p className="text-xs font-medium text-emerald-700 mb-1">Respuesta del profesional</p>
+                              <p className="text-sm text-muted-foreground">{review.professional_response}</p>
+                            </div>
+                          )}
+
+                          {user?.id === pro.user_id && !review.professional_response && (
+                            respondingTo === review.id ? (
+                              <div className="mt-3 space-y-2">
+                                <Textarea
+                                  value={responseDraft}
+                                  onChange={(e) => setResponseDraft(e.target.value)}
+                                  placeholder="Escribe tu respuesta..."
+                                  rows={2}
+                                />
+                                <div className="flex gap-2">
+                                  <Button size="sm" disabled={submittingResponse || !responseDraft.trim()} onClick={() => handleSubmitResponse(review.id)} className="cursor-pointer">
+                                    {submittingResponse ? 'Enviando...' : 'Responder'}
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={() => { setRespondingTo(null); setResponseDraft(''); }} className="cursor-pointer">Cancelar</Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setRespondingTo(review.id)}
+                                className="text-xs text-emerald-700 hover:underline mt-2 cursor-pointer"
+                              >
+                                Responder
+                              </button>
+                            )
+                          )}
                         </div>
                       ))}
                     </div>

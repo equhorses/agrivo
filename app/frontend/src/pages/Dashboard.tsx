@@ -8,11 +8,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Briefcase, DollarSign, MessageSquare, TrendingUp } from 'lucide-react';
+import { formatAmount, useMyCurrency } from '@/lib/currency';
 
 const client = createClient();
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const myCurrency = useMyCurrency();
   const [user, setUser] = useState<any>(null);
   const [myJobs, setMyJobs] = useState<any[]>([]);
   const [myBids, setMyBids] = useState<any[]>([]);
@@ -177,7 +179,7 @@ export default function Dashboard() {
                               </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground">
-                              {job.category} · {job.location} · ${job.budget_min?.toLocaleString()} - ${job.budget_max?.toLocaleString()} USD
+                              {job.category} · {job.location} · {formatAmount(job.budget_min, myCurrency)} - {formatAmount(job.budget_max, myCurrency)}
                             </p>
                           </div>
                           <span className="text-sm text-muted-foreground shrink-0">
@@ -240,7 +242,7 @@ export default function Dashboard() {
                                 </Badge>
                               </div>
                               <p className="text-sm text-muted-foreground">
-                                Monto: ${bid.amount?.toLocaleString()} USD
+                                Monto: {formatAmount(bid.amount, myCurrency)}
                                 {bid.message && ` · "${bid.message.substring(0, 50)}..."`}
                               </p>
                             </div>

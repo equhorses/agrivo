@@ -5,7 +5,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Star, Briefcase, MessageSquare, TrendingUp, Lock } from 'lucide-react';
+import { Star, Briefcase, MessageSquare, TrendingUp, Lock, Eye } from 'lucide-react';
 
 const client = createClient();
 
@@ -140,6 +140,18 @@ export default function Analytics() {
                     {bidStats.accepted} ganadas de {bidStats.total} enviadas
                     {bidStats.pending > 0 && ` · ${bidStats.pending} pendientes`}
                   </p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Eye className="h-4 w-4 text-emerald-600" />Visitas a tu perfil
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold" style={{ fontFamily: 'Poppins, sans-serif' }}>{profile?.profile_views ?? 0}</p>
+                  <p className="text-xs text-muted-foreground mt-1">desde que se empezó a contar</p>
                 </CardContent>
               </Card>
 

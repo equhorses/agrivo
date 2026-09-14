@@ -13,6 +13,7 @@ class Reviews(Base):
     rating = Column(Integer, nullable=False)
     comment = Column(String, nullable=False)
     reviewer_name = Column(String, nullable=True)
+    professional_response = Column(String, nullable=True)
     user_id = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), default=datetime.now)
     updated_at = Column(DateTime(timezone=True), default=datetime.now, onupdate=datetime.now)

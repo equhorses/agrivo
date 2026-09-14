@@ -73,6 +73,7 @@ class ProfilesResponse(BaseModel):
     currency: Optional[str] = None
     plan: Optional[str] = None  # calculado a partir de la suscripción activa, no una columna guardada
     featured: Optional[bool] = None
+    profile_views: Optional[int] = None
     user_id: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -236,6 +237,26 @@ async def get_profiles(
     except Exception as e:
         logger.error(f"Error fetching profiles {id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.post("/{id}/view")
+async def register_profile_view(
+    id: int,
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Suma una visita al contador del perfil (para el panel de analíticas)
+    — no cuenta las visitas del propio dueño del perfil a sí mismo."""
+    from models.profiles import Profiles as _Profiles
+
+    result = await db.execute(select(_Profiles).where(_Profiles.id == id))
+    profile = result.scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profiles not found")
+    if profile.user_id != str(current_user.id):
+        profile.profile_views = (profile.profile_views or 0) + 1
+        await db.commit()
+    return {"success": True}
 
 
 @router.post("", response_model=ProfilesResponse, status_code=201)

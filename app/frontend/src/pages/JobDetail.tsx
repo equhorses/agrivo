@@ -14,7 +14,7 @@ import { MapPin, Calendar, Clock, Ruler, DollarSign, Send, ArrowLeft, Check, X, 
 import { toast } from 'sonner';
 import { COUNTRIES, SEED_JOBS } from '@/lib/constants';
 import UserIdentity from '@/components/UserIdentity';
-import { formatAmount } from '@/lib/currency';
+import { formatAmount, useMyCurrency } from '@/lib/currency';
 
 const client = createClient();
 
@@ -30,7 +30,8 @@ export default function JobDetail() {
   const [job, setJob] = useState<any>(null);
   const [bids, setBids] = useState<any[]>([]);
   const [existingReview, setExistingReview] = useState<any>(null);
-  const [myCurrency, setMyCurrency] = useState<'USD' | 'EUR'>('USD');
+  const [editingReview, setEditingReview] = useState(false);
+  const myCurrency = useMyCurrency();
   const [acceptedProfessionalProfileId, setAcceptedProfessionalProfileId] = useState<number | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
@@ -51,13 +52,6 @@ export default function JobDetail() {
   useEffect(() => {
     client.auth.me()
       .then((res) => { if (res?.data) setUser(res.data); })
-      .catch(() => {});
-
-    client.entities.profiles.queryMine({ limit: 1 })
-      .then((res) => {
-        const c = res?.data?.items?.[0]?.currency;
-        if (c === 'EUR') setMyCurrency('EUR');
-      })
       .catch(() => {});
 
     if (id) {
@@ -138,6 +132,42 @@ export default function JobDetail() {
       toast.error('No se pudo enviar la reseña');
     } finally {
       setSubmittingReview(false);
+    }
+  };
+
+  const handleStartEditReview = () => {
+    setReviewRating(existingReview.rating);
+    setReviewComment(existingReview.comment);
+    setEditingReview(true);
+  };
+
+  const handleUpdateReview = async () => {
+    if (!existingReview) return;
+    setSubmittingReview(true);
+    try {
+      await client.entities.reviews.update(existingReview.id, {
+        data: { rating: reviewRating, comment: reviewComment.trim() },
+      });
+      toast.success('Reseña actualizada');
+      setEditingReview(false);
+      loadExistingReview();
+    } catch {
+      toast.error('No se pudo actualizar la reseña');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const handleDeleteReview = async () => {
+    if (!existingReview || !window.confirm('¿Borrar tu reseña?')) return;
+    try {
+      await client.entities.reviews.remove(existingReview.id);
+      toast.success('Reseña borrada');
+      setExistingReview(null);
+      setReviewComment('');
+      setReviewRating(5);
+    } catch {
+      toast.error('No se pudo borrar la reseña');
     }
   };
 
@@ -417,14 +447,47 @@ export default function JobDetail() {
                   </CardHeader>
                   <CardContent>
                     {existingReview ? (
-                      <div>
-                        <div className="flex items-center gap-1 mb-2">
-                          {[1, 2, 3, 4, 5].map((n) => (
-                            <Star key={n} className={`h-5 w-5 ${n <= existingReview.rating ? 'text-amber-500 fill-amber-500' : 'text-slate-300'}`} />
-                          ))}
+                      editingReview ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((n) => (
+                              <button key={n} type="button" onClick={() => setReviewRating(n)} className="cursor-pointer">
+                                <Star className={`h-7 w-7 ${n <= reviewRating ? 'text-amber-500 fill-amber-500' : 'text-slate-300'}`} />
+                              </button>
+                            ))}
+                          </div>
+                          <Textarea
+                            value={reviewComment}
+                            onChange={(e) => setReviewComment(e.target.value)}
+                            rows={3}
+                          />
+                          <div className="flex gap-2">
+                            <Button onClick={handleUpdateReview} disabled={submittingReview || !reviewComment.trim()} className="cursor-pointer">
+                              {submittingReview ? 'Guardando...' : 'Guardar cambios'}
+                            </Button>
+                            <Button variant="outline" onClick={() => setEditingReview(false)} className="cursor-pointer">Cancelar</Button>
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground">{existingReview.comment}</p>
-                      </div>
+                      ) : (
+                        <div>
+                          <div className="flex items-center gap-1 mb-2">
+                            {[1, 2, 3, 4, 5].map((n) => (
+                              <Star key={n} className={`h-5 w-5 ${n <= existingReview.rating ? 'text-amber-500 fill-amber-500' : 'text-slate-300'}`} />
+                            ))}
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-3">{existingReview.comment}</p>
+                          {existingReview.professional_response && (
+                            <div className="bg-slate-50 border rounded-lg p-3 mb-3">
+                              <p className="text-xs font-medium text-emerald-700 mb-1">Respuesta del profesional</p>
+                              <p className="text-sm text-muted-foreground">{existingReview.professional_response}</p>
+                            </div>
+                          )}
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={handleStartEditReview} className="cursor-pointer">Editar</Button>
+                            <Button size="sm" variant="outline" onClick={handleDeleteReview} className="cursor-pointer text-red-600">Borrar</Button>
+                          </div>
+                        </div>
+                      )
                     ) : (
                       <div className="space-y-3">
                         <p className="text-sm text-muted-foreground">

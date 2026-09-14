@@ -12,6 +12,9 @@ from core.database import get_db
 from services.reviews import ReviewsService
 from dependencies.auth import get_current_user
 from schemas.auth import UserResponse
+from sqlalchemy import select
+from models.reviews import Reviews
+from models.profiles import Profiles
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -46,6 +49,7 @@ class ReviewsResponse(BaseModel):
     rating: int
     comment: str
     reviewer_name: Optional[str] = None
+    professional_response: Optional[str] = None
     user_id: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -262,6 +266,38 @@ async def update_reviewss_batch(
         await db.rollback()
         logger.error(f"Error in batch update: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Batch update failed: {str(e)}")
+
+
+class ReviewResponseRequest(BaseModel):
+    response: str
+
+
+@router.post("/{id}/respond", response_model=ReviewsResponse)
+async def respond_to_review(
+    id: int,
+    payload: ReviewResponseRequest,
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """El profesional reseñado responde públicamente a su reseña — no el
+    que la escribió, así que necesita su propia comprobación de permiso."""
+    if not payload.response.strip():
+        raise HTTPException(status_code=400, detail="La respuesta no puede estar vacía")
+
+    result = await db.execute(select(Reviews).where(Reviews.id == id))
+    review = result.scalar_one_or_none()
+    if not review:
+        raise HTTPException(status_code=404, detail="Reseña no encontrada")
+
+    profile_result = await db.execute(select(Profiles).where(Profiles.id == int(review.professional_id)))
+    profile = profile_result.scalar_one_or_none()
+    if not profile or profile.user_id != str(current_user.id):
+        raise HTTPException(status_code=403, detail="Solo el profesional reseñado puede responder")
+
+    review.professional_response = payload.response.strip()
+    await db.commit()
+    await db.refresh(review)
+    return review
 
 
 @router.put("/{id}", response_model=ReviewsResponse)

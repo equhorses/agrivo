@@ -11,12 +11,14 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin, Search, Plus } from 'lucide-react';
 import { COUNTRIES, CATEGORIES, SEED_JOBS } from '@/lib/constants';
+import { formatAmount, useMyCurrency } from '@/lib/currency';
 
 const client = createClient();
 
 export default function Jobs() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const myCurrency = useMyCurrency();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -187,9 +189,9 @@ export default function Jobs() {
                               </span>
                               <div className="text-right">
                                 <span className="font-bold text-emerald-700" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                                  ${job.budget_min?.toLocaleString()}
+                                  {formatAmount(job.budget_min, myCurrency)}
                                 </span>
-                                <span className="text-xs text-muted-foreground"> - ${job.budget_max?.toLocaleString()}</span>
+                                <span className="text-xs text-muted-foreground"> - {formatAmount(job.budget_max, myCurrency)}</span>
                               </div>
                             </div>
                           </CardContent>
