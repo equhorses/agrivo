@@ -4,6 +4,9 @@ from core.database import get_db
 from dependencies.auth import get_current_user, STAFF_ROLES
 from fastapi import APIRouter, Depends, HTTPException, status
 from models.auth import User
+from models.messages import Messages
+from models.notifications import Notifications
+from models.subscriptions import Subscriptions
 from pydantic import BaseModel
 from schemas.auth import UserResponse
 from services.user import UserService
@@ -121,3 +124,56 @@ async def cancel_account_deletion(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User profile not found")
     return user
+
+
+class SupportContactRequest(BaseModel):
+    subject: str
+    message: str
+
+
+class SupportContactResponse(BaseModel):
+    priority: bool
+    plan: Optional[str] = None
+
+
+@router.post("/support/contact", response_model=SupportContactResponse)
+async def contact_support(
+    payload: SupportContactRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Manda un mensaje directo al equipo de Agrivo (aparece en Mensajes
+    directos del panel de admin) y le avisa a alguien del equipo. Si el
+    usuario tiene un plan de pago activo, se marca como prioritario."""
+    if not payload.subject.strip() or not payload.message.strip():
+        raise HTTPException(status_code=400, detail="Rellena el asunto y el mensaje")
+
+    sub_result = await db.execute(
+        select(Subscriptions).where(Subscriptions.user_id == str(current_user.id), Subscriptions.status == "active")
+    )
+    subscription = sub_result.scalar_one_or_none()
+    is_priority = bool(subscription and subscription.plan in ("pro", "enterprise"))
+
+    staff_result = await db.execute(
+        select(User).where(User.role.in_(STAFF_ROLES)).order_by(User.created_at.asc()).limit(1)
+    )
+    staff_user = staff_result.scalar_one_or_none()
+    if not staff_user:
+        raise HTTPException(status_code=503, detail="No hay nadie del equipo disponible ahora mismo, escribe a soporte@agrivo.com")
+
+    prefix = "[PRIORITARIO] " if is_priority else ""
+    db.add(Messages(
+        job_id=None, sender_id=str(current_user.id), receiver_id=staff_user.id,
+        content=f"{prefix}{payload.subject.strip()}\n\n{payload.message.strip()}",
+        user_id=str(current_user.id),
+    ))
+    db.add(Notifications(
+        user_id=staff_user.id,
+        type="support_request",
+        title=f'{"🔴 " if is_priority else ""}Nueva consulta de soporte',
+        body=payload.subject.strip()[:120],
+        link="/admin",
+    ))
+    await db.commit()
+
+    return SupportContactResponse(priority=is_priority, plan=subscription.plan if subscription else None)

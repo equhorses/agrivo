@@ -72,6 +72,7 @@ class ProfilesResponse(BaseModel):
     phone: Optional[str] = None
     currency: Optional[str] = None
     plan: Optional[str] = None  # calculado a partir de la suscripción activa, no una columna guardada
+    featured: Optional[bool] = None
     user_id: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -196,9 +197,11 @@ async def query_profiless_all(
                 tier_by_user_id = {}
                 for s in subs_result.scalars().all():
                     tier_by_user_id[s.user_id] = 2 if s.plan == "enterprise" else (1 if s.plan == "pro" else 0)
-                items.sort(key=lambda it: -tier_by_user_id.get(getattr(it, "user_id", None), 0))
+                items.sort(key=lambda it: -max(tier_by_user_id.get(getattr(it, "user_id", None), 0), 2 if getattr(it, "featured", False) else 0))
                 for it in items:
                     tier = tier_by_user_id.get(getattr(it, "user_id", None), 0)
+                    if getattr(it, "featured", False):
+                        tier = max(tier, 2)
                     it.plan = "enterprise" if tier == 2 else ("pro" if tier == 1 else None)
                 result["items"] = items
 

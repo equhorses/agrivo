@@ -174,6 +174,7 @@ interface AdminProfessional {
   rating: number | null;
   jobs_completed: number | null;
   verified_kyc: boolean | null;
+  featured: boolean | null;
   user_id: string;
   email: string | null;
 }
@@ -529,6 +530,18 @@ export default function Admin() {
     } catch (err: unknown) {
       const message = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'No se pudo banear.';
       toast.error(message);
+    }
+    setProcessing(null);
+  };
+
+  const handleToggleFeatured = async (p: AdminProfessional) => {
+    setProcessing(p.id);
+    try {
+      await client.apiCall.invoke(`/api/v1/admin/professionals/${p.id}/toggle-featured`, {}, 'POST');
+      toast.success(p.featured ? 'Ya no está destacado' : 'Destacado como Top Pro');
+      loadData();
+    } catch {
+      toast.error('No se pudo cambiar el destacado');
     }
     setProcessing(null);
   };
@@ -976,6 +989,9 @@ export default function Admin() {
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <a href={`/pros/${p.id}`} target="_blank" rel="noopener noreferrer"><Button size="sm" variant="outline" className="cursor-pointer">Ver perfil</Button></a>
+                        <Button size="sm" variant={p.featured ? 'default' : 'outline'} disabled={processing === p.id} className={p.featured ? 'cursor-pointer bg-amber-500 hover:bg-amber-600' : 'cursor-pointer'} onClick={() => handleToggleFeatured(p)}>
+                          {p.featured ? '★ Destacado' : 'Destacar'}
+                        </Button>
                         <Button size="sm" variant="outline" disabled={processing === p.id} className="cursor-pointer" onClick={() => handleBanProfessional(p)}>Banear</Button>
                         <Button size="sm" variant="destructive" disabled={processing === p.id} className="cursor-pointer" onClick={() => handleDeleteProfessionalProfile(p)}>Borrar perfil</Button>
                       </div>

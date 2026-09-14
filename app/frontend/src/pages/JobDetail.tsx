@@ -10,10 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Calendar, Clock, Ruler, DollarSign, Send, ArrowLeft, Check, X, Plus, MessageSquare } from 'lucide-react';
+import { MapPin, Calendar, Clock, Ruler, DollarSign, Send, ArrowLeft, Check, X, Plus, MessageSquare, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { COUNTRIES, SEED_JOBS } from '@/lib/constants';
 import UserIdentity from '@/components/UserIdentity';
+import { formatAmount } from '@/lib/currency';
 
 const client = createClient();
 
@@ -28,6 +29,12 @@ export default function JobDetail() {
   const navigate = useNavigate();
   const [job, setJob] = useState<any>(null);
   const [bids, setBids] = useState<any[]>([]);
+  const [existingReview, setExistingReview] = useState<any>(null);
+  const [myCurrency, setMyCurrency] = useState<'USD' | 'EUR'>('USD');
+  const [acceptedProfessionalProfileId, setAcceptedProfessionalProfileId] = useState<number | null>(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [bidAmount, setBidAmount] = useState('');
@@ -46,11 +53,29 @@ export default function JobDetail() {
       .then((res) => { if (res?.data) setUser(res.data); })
       .catch(() => {});
 
+    client.entities.profiles.queryMine({ limit: 1 })
+      .then((res) => {
+        const c = res?.data?.items?.[0]?.currency;
+        if (c === 'EUR') setMyCurrency('EUR');
+      })
+      .catch(() => {});
+
     if (id) {
       loadJob();
       loadBids();
+      loadExistingReview();
     }
   }, [id]);
+
+  const loadExistingReview = async () => {
+    if (isSeedJob) return;
+    try {
+      const res = await client.entities.reviews.queryAll({ query: { job_id: Number(id) }, limit: 1 });
+      setExistingReview(res?.data?.items?.[0] || null);
+    } catch {
+      // sin reseña todavía
+    }
+  };
 
   const loadJob = async () => {
     if (seedJob) {
@@ -80,6 +105,39 @@ export default function JobDetail() {
       setBids(res?.data?.items || []);
     } catch {
       // Failed to load bids
+    }
+  };
+
+  useEffect(() => {
+    const acceptedBid = bids.find((b) => b.status === 'accepted');
+    if (!acceptedBid) {
+      setAcceptedProfessionalProfileId(null);
+      return;
+    }
+    client.entities.profiles.queryAll({ query: { user_id: acceptedBid.user_id }, limit: 1 })
+      .then((res) => setAcceptedProfessionalProfileId(res?.data?.items?.[0]?.id ?? null))
+      .catch(() => setAcceptedProfessionalProfileId(null));
+  }, [bids]);
+
+  const handleSubmitReview = async () => {
+    if (!acceptedProfessionalProfileId) return;
+    setSubmittingReview(true);
+    try {
+      await client.entities.reviews.create({
+        data: {
+          professional_id: String(acceptedProfessionalProfileId),
+          job_id: Number(id),
+          rating: reviewRating,
+          comment: reviewComment.trim(),
+          reviewer_name: user?.name || undefined,
+        },
+      });
+      toast.success('¡Gracias por tu reseña!');
+      loadExistingReview();
+    } catch {
+      toast.error('No se pudo enviar la reseña');
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -235,7 +293,7 @@ export default function JobDetail() {
                       <DollarSign className="h-5 w-5 text-emerald-600" />
                       <div>
                         <p className="text-xs text-muted-foreground">Presupuesto</p>
-                        <p className="text-sm font-medium">${job.budget_min?.toLocaleString()} - ${job.budget_max?.toLocaleString()}</p>
+                        <p className="text-sm font-medium">{formatAmount(job.budget_min, myCurrency)} - {formatAmount(job.budget_max, myCurrency)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border">
@@ -286,7 +344,7 @@ export default function JobDetail() {
                               <div className="flex items-center justify-between gap-2 flex-wrap">
                                 <UserIdentity userId={bid.user_id} size="sm" />
                                 <span className="font-bold text-emerald-700" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                                  ${bid.amount?.toLocaleString()} USD
+                                  {formatAmount(bid.amount, myCurrency)}
                                 </span>
                               </div>
                               {bid.message && (
@@ -351,6 +409,52 @@ export default function JobDetail() {
                   )}
                 </CardContent>
               </Card>
+
+              {isOwner && acceptedProfessionalProfileId && (
+                <Card className="bg-white mt-6">
+                  <CardHeader>
+                    <CardTitle>Reseña del profesional</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {existingReview ? (
+                      <div>
+                        <div className="flex items-center gap-1 mb-2">
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <Star key={n} className={`h-5 w-5 ${n <= existingReview.rating ? 'text-amber-500 fill-amber-500' : 'text-slate-300'}`} />
+                          ))}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{existingReview.comment}</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <p className="text-sm text-muted-foreground">
+                          ¿Qué tal fue trabajar con esta persona? Tu reseña ayuda a otros a decidir.
+                        </p>
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <button key={n} type="button" onClick={() => setReviewRating(n)} className="cursor-pointer">
+                              <Star className={`h-7 w-7 ${n <= reviewRating ? 'text-amber-500 fill-amber-500' : 'text-slate-300'}`} />
+                            </button>
+                          ))}
+                        </div>
+                        <Textarea
+                          value={reviewComment}
+                          onChange={(e) => setReviewComment(e.target.value)}
+                          placeholder="Cuenta tu experiencia..."
+                          rows={3}
+                        />
+                        <Button
+                          onClick={handleSubmitReview}
+                          disabled={submittingReview || !reviewComment.trim()}
+                          className="cursor-pointer"
+                        >
+                          {submittingReview ? 'Enviando...' : 'Publicar reseña'}
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Sidebar - Submit Bid */}

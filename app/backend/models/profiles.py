@@ -21,6 +21,7 @@ class Profiles(Base):
     language = Column(String, nullable=True, default='es', server_default='es')
     phone = Column(String, nullable=True)
     currency = Column(String, nullable=True, default='USD', server_default='USD')  # USD | EUR — preferencia de visualización, no convierte importes ya guardados
+    featured = Column(Boolean, nullable=True, default=False, server_default='false')  # el admin lo puede destacar como "Top Pro" a mano, además de por suscripción
     user_id = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), default=datetime.now)
     updated_at = Column(DateTime(timezone=True), default=datetime.now, onupdate=datetime.now)

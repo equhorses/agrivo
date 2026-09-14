@@ -12,6 +12,8 @@ import ProProfile from './pages/ProProfile';
 import Pricing from './pages/Pricing';
 import Dashboard from './pages/Dashboard';
 import Account from './pages/Account';
+import Support from './pages/Support';
+import Analytics from './pages/Analytics';
 import Messages from './pages/Messages';
 import Disputes from './pages/Disputes';
 import PaymentSuccess from './pages/PaymentSuccess';
@@ -37,6 +39,8 @@ const AppRoutes = () => (
     <Route path="/precios" element={<Pricing />} />
     <Route path="/dashboard" element={<Dashboard />} />
     <Route path="/account" element={<Account />} />
+    <Route path="/soporte" element={<Support />} />
+    <Route path="/analytics" element={<Analytics />} />
     <Route path="/messages" element={<Messages />} />
     <Route path="/disputes" element={<Disputes />} />
     <Route path="/payment-success" element={<PaymentSuccess />} />

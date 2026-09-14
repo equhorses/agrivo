@@ -107,6 +107,7 @@ const ENTITY_NAMES = [
   'messages',
   'notifications',
   'profiles',
+  'reviews',
   'subscriptions',
 ] as const;
 

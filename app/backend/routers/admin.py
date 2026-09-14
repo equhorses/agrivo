@@ -794,6 +794,7 @@ class AdminProfessionalResponse(BaseModel):
     rating: Optional[float] = None
     jobs_completed: Optional[int] = None
     verified_kyc: Optional[bool] = None
+    featured: Optional[bool] = None
     user_id: str
     email: Optional[str] = None
 
@@ -824,7 +825,7 @@ async def list_professionals_admin(
     return [
         AdminProfessionalResponse(
             id=p.id, display_name=p.display_name, role=p.role, country=p.country, rating=p.rating,
-            jobs_completed=p.jobs_completed, verified_kyc=p.verified_kyc, user_id=p.user_id,
+            jobs_completed=p.jobs_completed, verified_kyc=p.verified_kyc, featured=p.featured, user_id=p.user_id,
             email=emails_by_user_id.get(p.user_id),
         )
         for p in profiles
@@ -1269,6 +1270,35 @@ async def update_platform_settings(
 
 
 # ==================== Profesionales: acciones ====================
+
+
+@router.post("/professionals/{profile_id}/toggle-featured", response_model=AdminProfessionalResponse)
+async def toggle_featured_professional(
+    profile_id: int,
+    current_user: UserResponse = Depends(get_staff_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Destaca o quita el destacado manual (Top Pro) de un perfil, aparte
+    de lo que le corresponda por su suscripción real."""
+    result = await db.execute(select(Profiles).where(Profiles.id == profile_id))
+    profile = result.scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Perfil no encontrado")
+    profile.featured = not profile.featured
+    await db.commit()
+    await db.refresh(profile)
+    await log_admin_action(
+        db, current_user.id, current_user.email,
+        "feature_professional" if profile.featured else "unfeature_professional",
+        target=str(profile_id), details=profile.display_name,
+    )
+    user_result = await db.execute(select(User).where(User.id == profile.user_id))
+    user = user_result.scalar_one_or_none()
+    return AdminProfessionalResponse(
+        id=profile.id, display_name=profile.display_name, role=profile.role, country=profile.country,
+        rating=profile.rating, jobs_completed=profile.jobs_completed, verified_kyc=profile.verified_kyc,
+        featured=profile.featured, user_id=profile.user_id, email=user.email if user else None,
+    )
 
 
 @router.delete("/professionals/{profile_id}")

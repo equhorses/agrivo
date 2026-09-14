@@ -295,6 +295,9 @@ export default function Account() {
                         </Button>
                       )}
                       <Button variant="outline" onClick={() => navigate('/precios')} className="cursor-pointer">Cambiar de plan</Button>
+                      {plan === 'enterprise' && (
+                        <Button variant="outline" onClick={() => navigate('/analytics')} className="cursor-pointer">Ver mis analíticas</Button>
+                      )}
                     </div>
                   )}
                 </CardContent>

@@ -4,7 +4,7 @@ import { createClient } from '@/lib/atomsClient';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { Menu, User, LogOut, LayoutDashboard, MessageSquare, AlertTriangle, Shield, Bell } from 'lucide-react';
+import { Menu, User, LogOut, LayoutDashboard, MessageSquare, AlertTriangle, Shield, Bell, Plus } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -131,6 +131,18 @@ export default function Header() {
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
+          {/* Publicar trabajo directo */}
+          {user && (
+            <Button
+              size="sm"
+              onClick={() => navigate('/jobs/new')}
+              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 cursor-pointer"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Publicar Trabajo
+            </Button>
+          )}
+
           {/* Notificaciones */}
           {user && (
             <DropdownMenu>
@@ -214,6 +226,10 @@ export default function Header() {
                 <DropdownMenuItem onClick={() => navigate('/account')} className="cursor-pointer">
                   <User className="h-4 w-4 mr-2" />
                   Mi cuenta
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/soporte')} className="cursor-pointer">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Soporte
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/messages')} className="cursor-pointer">
                   <MessageSquare className="h-4 w-4 mr-2" />
