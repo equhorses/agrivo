@@ -1279,7 +1279,7 @@ async def delete_professional_admin(
 
 
 class AdminConversationResponse(BaseModel):
-    job_id: int
+    job_id: Optional[int] = None  # None = conversación directa, sin trabajo asociado (ver /messages/direct)
     job_title: Optional[str] = None
     message_count: int
     last_message_at: Optional[datetime] = None
@@ -1318,8 +1318,9 @@ async def list_conversations_admin(
             select(Messages).where(Messages.job_id == r.job_id).order_by(Messages.created_at.desc()).limit(1)
         )
         last_msg = last_msg_result.scalar_one_or_none()
+        title = "Mensajes directos (sin trabajo asociado)" if r.job_id is None else jobs_by_id.get(r.job_id)
         out.append(AdminConversationResponse(
-            job_id=r.job_id, job_title=jobs_by_id.get(r.job_id), message_count=r.message_count,
+            job_id=r.job_id, job_title=title, message_count=r.message_count,
             last_message_at=r.last_message_at,
             last_message_preview=(last_msg.content[:120] if last_msg else None),
         ))
@@ -1328,7 +1329,7 @@ async def list_conversations_admin(
 
 class AdminMessageResponse(BaseModel):
     id: int
-    job_id: int
+    job_id: Optional[int] = None
     sender_id: Optional[str] = None
     sender_email: Optional[str] = None
     receiver_id: Optional[str] = None
@@ -1340,15 +1341,7 @@ class AdminMessageResponse(BaseModel):
         from_attributes = True
 
 
-@router.get("/messages/job/{job_id}", response_model=List[AdminMessageResponse])
-async def get_conversation_thread_admin(
-    job_id: int,
-    current_user: UserResponse = Depends(get_staff_user),
-    db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(select(Messages).where(Messages.job_id == job_id).order_by(Messages.created_at.asc()))
-    messages = result.scalars().all()
-
+async def _build_admin_message_thread(messages, db: AsyncSession):
     user_ids = set()
     for m in messages:
         if m.sender_id:
@@ -1368,6 +1361,27 @@ async def get_conversation_thread_admin(
         )
         for m in messages
     ]
+
+
+@router.get("/messages/job/{job_id}", response_model=List[AdminMessageResponse])
+async def get_conversation_thread_admin(
+    job_id: int,
+    current_user: UserResponse = Depends(get_staff_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Messages).where(Messages.job_id == job_id).order_by(Messages.created_at.asc()))
+    return await _build_admin_message_thread(result.scalars().all(), db)
+
+
+@router.get("/messages/direct", response_model=List[AdminMessageResponse])
+async def get_direct_messages_admin(
+    current_user: UserResponse = Depends(get_staff_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Mensajes que no están ligados a ningún trabajo (ej. los del botón
+    'Contactar' de un perfil, fuera del flujo de ofertas)."""
+    result = await db.execute(select(Messages).where(Messages.job_id.is_(None)).order_by(Messages.created_at.asc()))
+    return await _build_admin_message_thread(result.scalars().all(), db)
 
 
 @router.delete("/messages/{message_id}")

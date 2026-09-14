@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { createClient } from '@/lib/atomsClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -16,6 +17,7 @@ import { toast } from 'sonner';
 const client = createClient();
 
 export default function Professionals() {
+  const navigate = useNavigate();
   const [professionals, setProfessionals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,7 +79,11 @@ export default function Professionals() {
       client.auth.toLogin();
       return;
     }
-    toast.success(`Solicitud de contacto enviada a ${pro.display_name}. Te responderá pronto.`);
+    if (!pro.user_id) {
+      toast.error('Este es un perfil de ejemplo — no se le puede escribir de verdad.');
+      return;
+    }
+    navigate(`/messages?with=${pro.user_id}`);
   };
 
   return (
@@ -171,6 +177,7 @@ export default function Professionals() {
                         }`}
                       >
                         <CardContent className="p-6">
+                          <Link to={`/pros/${pro.id}`} className="block">
                           <div className="flex items-start gap-4">
                             <img
                               src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(pro.display_name || 'U')}&backgroundColor=${isTopPro ? 'D97706' : '059669'}&textColor=ffffff`}
@@ -178,7 +185,7 @@ export default function Professionals() {
                               className={`h-12 w-12 rounded-full shrink-0 ${isTopPro ? 'ring-2 ring-amber-400' : ''}`}
                             />
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-sm truncate" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                              <h4 className="font-semibold text-sm truncate hover:text-emerald-700" style={{ fontFamily: 'Poppins, sans-serif' }}>
                                 {pro.display_name}
                               </h4>
                               <div className="flex items-center gap-1 mt-0.5">
@@ -206,6 +213,7 @@ export default function Professionals() {
                           <div className="flex items-center gap-2 mt-3 flex-wrap">
                             <PlanBadge plan={pro.plan} />
                           </div>
+                          </Link>
 
                           <Button
                             variant="outline"

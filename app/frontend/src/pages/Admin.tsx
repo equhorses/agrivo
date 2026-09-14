@@ -72,7 +72,7 @@ interface InvitationItem {
 }
 
 interface AdminConversation {
-  job_id: number;
+  job_id: number | null;
   job_title: string | null;
   message_count: number;
   last_message_at: string | null;
@@ -262,7 +262,7 @@ export default function Admin() {
   const [newInvitePlan, setNewInvitePlan] = useState('pro');
   const [newInviteMonths, setNewInviteMonths] = useState(1);
   const [conversations, setConversations] = useState<AdminConversation[]>([]);
-  const [openThreadJobId, setOpenThreadJobId] = useState<number | null>(null);
+  const [openThreadJobId, setOpenThreadJobId] = useState<number | 'direct' | null>(null);
   const [threadMessages, setThreadMessages] = useState<AdminMessage[]>([]);
   const [threadLoading, setThreadLoading] = useState(false);
   const [slotSaving, setSlotSaving] = useState<string | null>(null);
@@ -463,15 +463,17 @@ export default function Admin() {
     setProcessing(null);
   };
 
-  const handleOpenThread = async (jobId: number) => {
-    if (openThreadJobId === jobId) {
+  const handleOpenThread = async (jobId: number | null) => {
+    const key = jobId ?? 'direct';
+    if (openThreadJobId === key) {
       setOpenThreadJobId(null);
       return;
     }
-    setOpenThreadJobId(jobId);
+    setOpenThreadJobId(key);
     setThreadLoading(true);
     try {
-      const res = await client.apiCall.invoke(`/api/v1/admin/messages/job/${jobId}`, {}, 'GET');
+      const path = jobId ? `/api/v1/admin/messages/job/${jobId}` : '/api/v1/admin/messages/direct';
+      const res = await client.apiCall.invoke(path, {}, 'GET');
       setThreadMessages(res?.data || []);
     } catch {
       toast.error('No se pudo cargar la conversación');
@@ -843,22 +845,24 @@ export default function Admin() {
             <TabsContent value="mensajes">
               <div className="space-y-2">
                 {conversations.map((c) => (
-                  <div key={c.job_id}>
+                  <div key={c.job_id ?? 'direct'}>
                     <Card className="bg-white cursor-pointer" onClick={() => handleOpenThread(c.job_id)}>
                       <CardContent className="p-4 flex items-center justify-between gap-3">
                         <div>
-                          <p className="font-medium text-sm">{c.job_title || `Trabajo #${c.job_id}`}</p>
+                          <p className="font-medium text-sm">{c.job_title || (c.job_id ? `Trabajo #${c.job_id}` : 'Mensajes directos')}</p>
                           <p className="text-xs text-muted-foreground truncate max-w-md">{c.last_message_preview}</p>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
                           <span className="text-xs text-muted-foreground">{c.message_count} mensajes · {fmtDate(c.last_message_at)}</span>
-                          <a href={`/jobs/${c.job_id}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                            <Button size="sm" variant="outline" className="cursor-pointer">Ver trabajo</Button>
-                          </a>
+                          {c.job_id && (
+                            <a href={`/jobs/${c.job_id}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                              <Button size="sm" variant="outline" className="cursor-pointer">Ver trabajo</Button>
+                            </a>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
-                    {openThreadJobId === c.job_id && (
+                    {openThreadJobId === (c.job_id ?? 'direct') && (
                       <Card className="bg-slate-50 mt-1 mb-2">
                         <CardContent className="p-4 space-y-2">
                           {threadLoading ? (

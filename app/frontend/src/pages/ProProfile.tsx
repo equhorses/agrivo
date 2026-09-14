@@ -66,8 +66,11 @@ export default function ProProfile() {
       client.auth.toLogin();
       return;
     }
-    toast.success(`Solicitud de contacto enviada a ${pro?.display_name}. Te responderá pronto.`);
-    navigate('/messages');
+    if (!pro?.user_id) {
+      toast.error('Este es un perfil de ejemplo — no se le puede escribir de verdad.');
+      return;
+    }
+    navigate(`/messages?with=${pro.user_id}`);
   };
 
   if (loading) {
