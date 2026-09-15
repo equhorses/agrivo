@@ -12,6 +12,7 @@ import { Star, MapPin, ArrowRight, Shield, Globe, Zap, MessageSquare } from 'luc
 import { PlanBadge } from '@/components/Badges';
 import { BRAND, COUNTRIES, CATEGORIES, SEED_PROFESSIONALS, SEED_JOBS } from '@/lib/constants';
 import { formatAmount, formatBudgetRange, useMyCurrency } from '@/lib/currency';
+import { t, useLocale } from '@/lib/i18n';
 import { toast } from 'sonner';
 
 const client = createClient();
@@ -59,6 +60,7 @@ export default function Index() {
   const [professionals, setProfessionals] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const myCurrency = useMyCurrency();
+  const [locale] = useLocale();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -130,17 +132,17 @@ export default function Index() {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 backdrop-blur-sm">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-sm text-emerald-200 font-medium">
-                Marketplace Global de Servicios Agrícolas
+                {t('hero.badge', locale)}
               </span>
             </div>
             <h1 className="text-white leading-[1.1]">
-              Conecta con los mejores{' '}
+              {t('hero.title1', locale)}{' '}
               <span className="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
-                profesionales del campo
+                {t('hero.title2', locale)}
               </span>
             </h1>
             <p className="text-lg md:text-xl text-slate-300 max-w-xl leading-relaxed">
-              Publica tu trabajo, recibe ofertas competitivas y contrata al profesional ideal. Operamos en {COUNTRIES.length} países.
+              {t('hero.subtitle', locale)} {t('hero.weOperateIn', locale)} {COUNTRIES.length} {t('hero.countriesWord', locale)}.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Button
@@ -148,7 +150,7 @@ export default function Index() {
                 onClick={() => navigate('/jobs/new')}
                 className="text-base bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-900/30 cursor-pointer"
               >
-                Publicar Trabajo
+                {t('hero.cta1', locale)}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <Button
@@ -157,12 +159,12 @@ export default function Index() {
                 onClick={() => navigate('/pros')}
                 className="text-base border-white/20 text-white hover:bg-white/10 backdrop-blur-sm cursor-pointer"
               >
-                Explorar Profesionales
+                {t('hero.cta2', locale)}
               </Button>
             </div>
             {/* Country flags */}
             <div className="flex items-center gap-3 pt-4">
-              <span className="text-xs text-slate-400">Operamos en:</span>
+              <span className="text-xs text-slate-400">{t('hero.countries', locale)}</span>
               <div className="flex items-center gap-1.5">
                 {COUNTRIES.map((c) => (
                   <img key={c.code} src={c.flag} alt={c.name} className="h-5 w-auto rounded-sm opacity-80 hover:opacity-100 transition-opacity" title={c.name} />
@@ -177,10 +179,10 @@ export default function Index() {
       <section className="py-12 bg-white border-b">
         <div className="container">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-            <AnimatedStat value={5000} label="Profesionales activos" suffix="+" />
-            <AnimatedStat value={2800} label="Trabajos completados" />
-            <AnimatedStat value={10} label="Países operativos" />
-            <AnimatedStat value={98} label="Satisfacción" suffix="%" />
+            <AnimatedStat value={5000} label={t('stats.pros', locale)} suffix="+" />
+            <AnimatedStat value={2800} label={t('stats.jobs', locale)} />
+            <AnimatedStat value={10} label={t('stats.countries', locale)} />
+            <AnimatedStat value={98} label={t('stats.satisfaction', locale)} suffix="%" />
           </div>
         </div>
       </section>
@@ -190,18 +192,18 @@ export default function Index() {
         <div className="container">
           <div className="text-center mb-14">
             <Badge variant="outline" className="mb-3 text-emerald-700 border-emerald-200 bg-emerald-50">
-              Simple y Efectivo
+              {t('how.badge', locale)}
             </Badge>
-            <h2>¿Cómo funciona {BRAND.name}?</h2>
+            <h2>{t('how.title', locale)}</h2>
             <p className="text-muted-foreground mt-3 max-w-lg mx-auto">
-              Tres simples pasos para conectar con el profesional perfecto
+              {t('how.subtitle', locale)}
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { step: '1', icon: Globe, title: 'Publica tu trabajo', desc: 'Describe lo que necesitas, establece tu presupuesto y selecciona la categoría de servicio.' },
-              { step: '2', icon: Shield, title: 'Recibe ofertas verificadas', desc: 'Profesionales con KYC verificado envían sus propuestas competitivas con precio y plazo.' },
-              { step: '3', icon: Zap, title: 'Contrata y paga seguro', desc: 'Elige al mejor, comunícate directamente y paga de forma segura a través de la plataforma.' },
+              { step: '1', icon: Globe, title: t('how.step1.title', locale), desc: t('how.step1.desc', locale) },
+              { step: '2', icon: Shield, title: t('how.step2.title', locale), desc: t('how.step2.desc', locale) },
+              { step: '3', icon: Zap, title: t('how.step3.title', locale), desc: t('how.step3.desc', locale) },
             ].map((item) => {
               const Icon = item.icon;
               return (
@@ -227,13 +229,13 @@ export default function Index() {
           <div className="flex items-end justify-between mb-10">
             <div>
               <Badge variant="outline" className="mb-3 text-emerald-700 border-emerald-200 bg-emerald-50">
-                Servicios
+                {t('categories.badge', locale)}
               </Badge>
-              <h2>Categorías de servicios</h2>
-              <p className="text-muted-foreground mt-2">Encuentra profesionales especializados en cada área</p>
+              <h2>{t('categories.title', locale)}</h2>
+              <p className="text-muted-foreground mt-2">{t('categories.subtitle', locale)}</p>
             </div>
             <Button variant="ghost" onClick={() => navigate('/jobs')} className="hidden md:flex cursor-pointer text-emerald-700">
-              Ver todos <ArrowRight className="ml-1 h-4 w-4" />
+              {t('viewAll', locale)} <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
@@ -263,7 +265,7 @@ export default function Index() {
               <p className="text-muted-foreground mt-2">Oportunidades recientes para profesionales del campo</p>
             </div>
             <Button variant="ghost" onClick={() => navigate('/jobs')} className="hidden md:flex cursor-pointer text-emerald-700">
-              Ver todos <ArrowRight className="ml-1 h-4 w-4" />
+              {t('viewAll', locale)} <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -316,7 +318,7 @@ export default function Index() {
               <p className="text-muted-foreground mt-2">Los expertos mejor valorados de la plataforma</p>
             </div>
             <Button variant="ghost" onClick={() => navigate('/pros')} className="hidden md:flex cursor-pointer text-emerald-700">
-              Ver todos <ArrowRight className="ml-1 h-4 w-4" />
+              {t('viewAll', locale)} <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -382,9 +384,9 @@ export default function Index() {
           <div className="absolute bottom-10 right-10 h-48 w-48 rounded-full bg-white/20 blur-3xl" />
         </div>
         <div className="container text-center relative">
-          <h2 className="text-white">¿Listo para transformar tu campo?</h2>
+          <h2 className="text-white">{t('cta.title', locale)}</h2>
           <p className="mt-4 text-emerald-100 max-w-lg mx-auto text-lg">
-            Únete a miles de agricultores y profesionales que ya están revolucionando el agro en {COUNTRIES.length} países.
+            {t('cta.subtitle', locale)}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
             <Button
@@ -392,7 +394,7 @@ export default function Index() {
               onClick={() => navigate('/jobs/new')}
               className="text-base bg-white text-emerald-800 hover:bg-slate-100 shadow-lg cursor-pointer"
             >
-              Publicar un Trabajo
+              {t('cta.btn1', locale)}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <Button
@@ -401,7 +403,7 @@ export default function Index() {
               onClick={() => navigate('/pros')}
               className="text-base border-white/30 text-white hover:bg-white/10 cursor-pointer"
             >
-              Soy Profesional
+              {t('cta.btn2', locale)}
             </Button>
           </div>
         </div>

@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MapPin, Search, Plus } from 'lucide-react';
 import { COUNTRIES, CATEGORIES, SEED_JOBS } from '@/lib/constants';
 import { formatAmount, formatBudgetRange, useMyCurrency } from '@/lib/currency';
+import { t, useLocale } from '@/lib/i18n';
 
 const client = createClient();
 
@@ -19,6 +20,7 @@ export default function Jobs() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const myCurrency = useMyCurrency();
+  const [locale] = useLocale();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -79,14 +81,14 @@ export default function Jobs() {
           <div className="container">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div>
-                <h1 className="text-3xl md:text-4xl">Trabajos Disponibles</h1>
+                <h1 className="text-3xl md:text-4xl">{t('jobs.title', locale)}</h1>
                 <p className="text-muted-foreground mt-2">
-                  Encuentra oportunidades agrícolas en {COUNTRIES.length} países
+                  {t('jobs.subtitle', locale)} {t('jobs.inCountriesPrefix', locale)} {COUNTRIES.length} {t('hero.countriesWord', locale)}
                 </p>
               </div>
               <Button onClick={() => navigate('/jobs/new')} className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 cursor-pointer">
                 <Plus className="h-4 w-4 mr-2" />
-                Publicar Trabajo
+                {t('jobs.publish', locale)}
               </Button>
             </div>
           </div>
@@ -99,7 +101,7 @@ export default function Jobs() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar trabajos..."
+                  placeholder={t('jobs.search', locale)}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -110,7 +112,7 @@ export default function Jobs() {
                   <SelectValue placeholder="Categoría" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas las categorías</SelectItem>
+                  <SelectItem value="all">{t('jobs.allCategories', locale)}</SelectItem>
                   {CATEGORIES.map((cat) => (
                     <SelectItem key={cat.id} value={cat.name}>{cat.icon} {cat.name}</SelectItem>
                   ))}
@@ -121,7 +123,7 @@ export default function Jobs() {
                   <SelectValue placeholder="País" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos los países</SelectItem>
+                  <SelectItem value="all">{t('jobs.allCountries', locale)}</SelectItem>
                   {COUNTRIES.map((c) => (
                     <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>
                   ))}
@@ -132,7 +134,7 @@ export default function Jobs() {
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos los tipos</SelectItem>
+                  <SelectItem value="all">{t('jobs.allTypes', locale)}</SelectItem>
                   <SelectItem value="reverse_auction">Subasta Inversa</SelectItem>
                   <SelectItem value="fixed_price">Precio Fijo</SelectItem>
                 </SelectContent>
@@ -158,7 +160,7 @@ export default function Jobs() {
               </div>
             ) : filteredJobs.length > 0 ? (
               <>
-                <p className="text-sm text-muted-foreground mb-4">{filteredJobs.length} trabajos encontrados</p>
+                <p className="text-sm text-muted-foreground mb-4">{filteredJobs.length} {t('jobs.found', locale)}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {filteredJobs.map((job) => {
                     const country = COUNTRIES.find(c => c.name === job.country);
@@ -205,10 +207,10 @@ export default function Jobs() {
                 <div className="h-16 w-16 rounded-full bg-slate-200 flex items-center justify-center mx-auto mb-4">
                   <Search className="h-8 w-8 text-slate-400" />
                 </div>
-                <h3 style={{ fontFamily: 'Poppins, sans-serif' }}>No se encontraron trabajos</h3>
-                <p className="text-muted-foreground mt-2">Intenta ajustar los filtros o publica un nuevo trabajo</p>
+                <h3 style={{ fontFamily: 'Poppins, sans-serif' }}>{t('jobs.notFound', locale)}</h3>
+                <p className="text-muted-foreground mt-2">{t('jobs.adjustFilters', locale)}</p>
                 <Button onClick={() => navigate('/jobs/new')} className="mt-4 bg-gradient-to-r from-emerald-600 to-teal-600 cursor-pointer">
-                  Publicar Trabajo
+                  {t('jobs.publish', locale)}
                 </Button>
               </div>
             )}

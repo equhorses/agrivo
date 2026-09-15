@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 import { BRAND, COUNTRIES, CATEGORIES } from '@/lib/constants';
+import { t, useLocale } from '@/lib/i18n';
 
 export default function Footer() {
+  const [locale] = useLocale();
   return (
     <footer className="bg-slate-900 text-slate-300">
       <div className="container py-16">
@@ -17,7 +19,7 @@ export default function Footer() {
               <span className="font-bold text-lg text-white" style={{ fontFamily: 'Poppins, sans-serif' }}>{BRAND.name}</span>
             </div>
             <p className="text-sm text-slate-400 leading-relaxed">
-              {BRAND.description}. Tecnología al servicio del campo.
+              {BRAND.description}. {t('footer.techForField', locale)}
             </p>
             <div className="flex flex-wrap gap-2">
               {COUNTRIES.slice(0, 6).map((c) => (
@@ -28,18 +30,18 @@ export default function Footer() {
 
           {/* Platform */}
           <div>
-            <h4 className="font-semibold text-white mb-4" style={{ fontFamily: 'Poppins, sans-serif' }}>Plataforma</h4>
+            <h4 className="font-semibold text-white mb-4" style={{ fontFamily: 'Poppins, sans-serif' }}>{t('footer.platform', locale)}</h4>
             <ul className="space-y-2.5 text-sm">
-              <li><Link to="/jobs" className="hover:text-white transition-colors cursor-pointer">Trabajos</Link></li>
-              <li><Link to="/pros" className="hover:text-white transition-colors cursor-pointer">Profesionales</Link></li>
-              <li><Link to="/precios" className="hover:text-white transition-colors cursor-pointer">Precios</Link></li>
-              <li><Link to="/jobs/new" className="hover:text-white transition-colors cursor-pointer">Publicar Trabajo</Link></li>
+              <li><Link to="/jobs" className="hover:text-white transition-colors cursor-pointer">{t('nav.jobs', locale)}</Link></li>
+              <li><Link to="/pros" className="hover:text-white transition-colors cursor-pointer">{t('nav.pros', locale)}</Link></li>
+              <li><Link to="/precios" className="hover:text-white transition-colors cursor-pointer">{t('nav.pricing', locale)}</Link></li>
+              <li><Link to="/jobs/new" className="hover:text-white transition-colors cursor-pointer">{t('jobs.publish', locale)}</Link></li>
             </ul>
           </div>
 
           {/* Categories */}
           <div>
-            <h4 className="font-semibold text-white mb-4" style={{ fontFamily: 'Poppins, sans-serif' }}>Servicios</h4>
+            <h4 className="font-semibold text-white mb-4" style={{ fontFamily: 'Poppins, sans-serif' }}>{t('footer.services', locale)}</h4>
             <ul className="space-y-2.5 text-sm">
               {CATEGORIES.slice(0, 6).map((cat) => (
                 <li key={cat.id}>
@@ -53,22 +55,22 @@ export default function Footer() {
 
           {/* Legal */}
           <div>
-            <h4 className="font-semibold text-white mb-4" style={{ fontFamily: 'Poppins, sans-serif' }}>Legal</h4>
+            <h4 className="font-semibold text-white mb-4" style={{ fontFamily: 'Poppins, sans-serif' }}>{t('footer.legal', locale)}</h4>
             <ul className="space-y-2.5 text-sm">
-              <li><Link to="/legal/terminos" className="hover:text-white transition-colors cursor-pointer">Términos de Servicio</Link></li>
-              <li><Link to="/legal/privacidad" className="hover:text-white transition-colors cursor-pointer">Política de Privacidad</Link></li>
-              <li><Link to="/legal/cookies" className="hover:text-white transition-colors cursor-pointer">Política de Cookies</Link></li>
-              <li><Link to="/legal/contacto" className="hover:text-white transition-colors cursor-pointer">Contacto</Link></li>
+              <li><Link to="/legal/terminos" className="hover:text-white transition-colors cursor-pointer">{t('legal.terms', locale)}</Link></li>
+              <li><Link to="/legal/privacidad" className="hover:text-white transition-colors cursor-pointer">{t('legal.privacy', locale)}</Link></li>
+              <li><Link to="/legal/cookies" className="hover:text-white transition-colors cursor-pointer">{t('legal.cookies', locale)}</Link></li>
+              <li><Link to="/legal/contacto" className="hover:text-white transition-colors cursor-pointer">{t('legal.contact', locale)}</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-slate-500">
-            © {new Date().getFullYear()} {BRAND.name}. Todos los derechos reservados.
+            © {new Date().getFullYear()} {BRAND.name}. {t('footer.rights', locale)}
           </p>
           <div className="flex items-center gap-4 text-sm text-slate-500">
-            <span>Hecho con 💚 para el campo</span>
+            <span>{t('footer.made', locale)}</span>
           </div>
         </div>
       </div>

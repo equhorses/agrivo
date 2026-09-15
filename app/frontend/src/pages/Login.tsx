@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { authApi } from '@/lib/auth';
 import { getAPIBaseURL } from '@/lib/config';
 import { Gift } from 'lucide-react';
+import { t, useLocale } from '@/lib/i18n';
 
 // Clave usada para recordar un token de invitación pendiente entre pasos del
 // login/registro. Agrivo no tiene una puerta de "Coming Soon" (a diferencia
@@ -86,6 +87,7 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [locale] = useLocale();
   const [searchParams] = useSearchParams();
   const [mode, setMode] = useState<'login' | 'register'>(
     searchParams.get('mode') === 'register' ? 'register' : 'login'
@@ -206,11 +208,11 @@ export default function LoginPage() {
       <div className="max-w-md mx-auto px-4 py-16">
         <Card>
           <CardHeader>
-            <CardTitle>{mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}</CardTitle>
+            <CardTitle>{mode === 'login' ? t('login.signIn', locale) : t('login.createAccount', locale)}</CardTitle>
             <CardDescription>
               {mode === 'login'
-                ? 'Entra con tu email y contraseña.'
-                : 'Regístrate para publicar y encontrar trabajos agrícolas en Agrivo.'}
+                ? t('login.signInSubtitle', locale)
+                : t('login.registerSubtitle', locale)}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -242,7 +244,7 @@ export default function LoginPage() {
                   onChange={(e) => setAgeConfirmed(e.target.checked)}
                   className="mt-0.5 cursor-pointer"
                 />
-                Confirmo que soy mayor de 18 años.
+                {t('login.confirmAge', locale)}
               </label>
             )}
             <Button
@@ -252,7 +254,7 @@ export default function LoginPage() {
               onClick={handleGoogleLogin}
             >
               <GoogleIcon />
-              Continuar con Google
+              {t('login.continueWithGoogle', locale)}
             </Button>
 
             <div className="relative my-5">
@@ -260,14 +262,14 @@ export default function LoginPage() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">o con tu email</span>
+                <span className="bg-card px-2 text-muted-foreground">{t('login.orWithEmail', locale)}</span>
               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
               {mode === 'register' && (
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nombre</Label>
+                  <Label htmlFor="name">{t('login.name', locale)}</Label>
                   <Input
                     id="name"
                     name="name"
@@ -275,12 +277,12 @@ export default function LoginPage() {
                     autoComplete="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Tu nombre"
+                    placeholder={t('login.namePlaceholder', locale)}
                   />
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('login.email', locale)}</Label>
                 <Input
                   id="email"
                   name="email"
@@ -289,11 +291,11 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tucorreo@ejemplo.com"
+                  placeholder={t('login.emailPlaceholder', locale)}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Contraseña</Label>
+                <Label htmlFor="password">{t('login.password', locale)}</Label>
                 <Input
                   id="password"
                   name="password"
@@ -303,37 +305,37 @@ export default function LoginPage() {
                   minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 8 caracteres"
+                  placeholder={t('login.passwordPlaceholder', locale)}
                 />
               </div>
               {mode === 'register' && HCAPTCHA_SITE_KEY && (
                 <div ref={captchaContainerRef} className="flex justify-center" />
               )}
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Un momento...' : mode === 'login' ? 'Entrar' : 'Crear cuenta'}
+                {loading ? t('login.submitting', locale) : mode === 'login' ? t('login.submitLogin', locale) : t('login.createAccount', locale)}
               </Button>
             </form>
             <div className="mt-4 text-center text-sm text-muted-foreground">
               {mode === 'login' ? (
                 <>
-                  ¿No tienes cuenta?{' '}
+                  {t('login.noAccount', locale)}{' '}
                   <button
                     type="button"
                     className="text-primary underline underline-offset-2"
                     onClick={() => setMode('register')}
                   >
-                    Regístrate
+                    {t('login.signUp', locale)}
                   </button>
                 </>
               ) : (
                 <>
-                  ¿Ya tienes cuenta?{' '}
+                  {t('login.haveAccount', locale)}{' '}
                   <button
                     type="button"
                     className="text-primary underline underline-offset-2"
                     onClick={() => setMode('login')}
                   >
-                    Inicia sesión
+                    {t('login.signInLink', locale)}
                   </button>
                 </>
               )}

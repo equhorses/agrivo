@@ -10,6 +10,7 @@ import { Check, Zap, Crown, Rocket, Loader2 } from 'lucide-react';
 import { VerifiedBadge, TopProBadge } from '@/components/Badges';
 import { toast } from 'sonner';
 import { PLANS } from '@/lib/constants';
+import { t, useLocale } from '@/lib/i18n';
 
 const client = createClient();
 
@@ -28,6 +29,7 @@ interface SubscriptionState {
 
 export default function Pricing() {
   const navigate = useNavigate();
+  const [locale] = useLocale();
   const [user, setUser] = useState<any>(null);
   const [subscription, setSubscription] = useState<SubscriptionState | null>(null);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
@@ -135,13 +137,13 @@ export default function Pricing() {
         <section className="bg-gradient-to-br from-slate-50 to-emerald-50/30 border-b py-16">
           <div className="container text-center">
             <Badge variant="outline" className="mb-4 text-emerald-700 border-emerald-200 bg-emerald-50">
-              Planes y Precios
+              {t('pricing.badge', locale)}
             </Badge>
             <h1 className="text-3xl md:text-4xl lg:text-5xl">
-              Elige el plan perfecto para tu negocio
+              {t('pricing.title', locale)}
             </h1>
             <p className="text-muted-foreground mt-4 max-w-lg mx-auto text-lg">
-              Desde agricultores independientes hasta profesionales top
+              {t('pricing.subtitle', locale)}
             </p>
           </div>
         </section>

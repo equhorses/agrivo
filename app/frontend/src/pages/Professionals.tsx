@@ -12,12 +12,14 @@ import { Star, Briefcase, Search, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PlanBadge } from '@/components/Badges';
 import { COUNTRIES, CATEGORIES, SEED_PROFESSIONALS } from '@/lib/constants';
+import { t, useLocale } from '@/lib/i18n';
 import { toast } from 'sonner';
 
 const client = createClient();
 
 export default function Professionals() {
   const navigate = useNavigate();
+  const [locale] = useLocale();
   const [professionals, setProfessionals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -97,9 +99,9 @@ export default function Professionals() {
         {/* Page Header */}
         <section className="bg-gradient-to-br from-slate-50 to-emerald-50/30 border-b py-12">
           <div className="container">
-            <h1 className="text-3xl md:text-4xl">Directorio de Profesionales</h1>
+            <h1 className="text-3xl md:text-4xl">{t('pros.title', locale)}</h1>
             <p className="text-muted-foreground mt-2">
-              Encuentra expertos verificados en todas las áreas del agro
+              {t('pros.subtitle', locale)}
             </p>
           </div>
         </section>
@@ -111,7 +113,7 @@ export default function Professionals() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar profesionales..."
+                  placeholder={t('pros.search', locale)}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -122,7 +124,7 @@ export default function Professionals() {
                   <SelectValue placeholder="País" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos los países</SelectItem>
+                  <SelectItem value="all">{t('jobs.allCountries', locale)}</SelectItem>
                   {COUNTRIES.map((c) => (
                     <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>
                   ))}
@@ -133,7 +135,7 @@ export default function Professionals() {
                   <SelectValue placeholder="Especialidad" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas las especialidades</SelectItem>
+                  <SelectItem value="all">{t('pros.allSpecialties', locale)}</SelectItem>
                   {CATEGORIES.map((cat) => (
                     <SelectItem key={cat.id} value={cat.name}>{cat.icon} {cat.name}</SelectItem>
                   ))}
@@ -164,7 +166,7 @@ export default function Professionals() {
               </div>
             ) : filteredPros.length > 0 ? (
               <>
-                <p className="text-sm text-muted-foreground mb-4">{filteredPros.length} profesionales encontrados</p>
+                <p className="text-sm text-muted-foreground mb-4">{filteredPros.length} {t('pros.found', locale)}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   {filteredPros.map((pro) => {
                     const country = COUNTRIES.find(c => c.name === pro.country);
@@ -222,7 +224,7 @@ export default function Professionals() {
                             onClick={() => handleContact(pro)}
                           >
                             <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
-                            Contactar
+                            {t('contact', locale)}
                           </Button>
                         </CardContent>
                       </Card>
@@ -235,7 +237,7 @@ export default function Professionals() {
                 <div className="h-16 w-16 rounded-full bg-slate-200 flex items-center justify-center mx-auto mb-4">
                   <Search className="h-8 w-8 text-slate-400" />
                 </div>
-                <h3 style={{ fontFamily: 'Poppins, sans-serif' }}>No se encontraron profesionales</h3>
+                <h3 style={{ fontFamily: 'Poppins, sans-serif' }}>{t('pros.notFound', locale)}</h3>
                 <p className="text-muted-foreground mt-2">Intenta ajustar los filtros de búsqueda</p>
               </div>
             )}
