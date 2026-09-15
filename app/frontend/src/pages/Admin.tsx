@@ -240,6 +240,7 @@ function HouseAdEditor({
         {current?.image_url && <img src={current.image_url} alt={current.title} className="w-full h-24 object-cover rounded-md bg-slate-100" />}
         <Input placeholder="Título / texto alternativo" value={title} onChange={(e) => setTitle(e.target.value)} />
         <Input placeholder="URL de la imagen" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+        <p className="text-xs text-muted-foreground -mt-1">Tamaño recomendado: 1200 × 300 px</p>
         <Input placeholder="Enlace al hacer clic" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
         <div className="flex gap-2">
           <Button size="sm" disabled={saving} className="cursor-pointer bg-emerald-600 hover:bg-emerald-700" onClick={() => onSave(slot, title, imageUrl, linkUrl)}>Guardar</Button>

@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin, Search, Plus } from 'lucide-react';
 import { COUNTRIES, CATEGORIES, SEED_JOBS } from '@/lib/constants';
-import { formatAmount, useMyCurrency } from '@/lib/currency';
+import { formatAmount, formatBudgetRange, useMyCurrency } from '@/lib/currency';
 
 const client = createClient();
 
@@ -189,9 +189,8 @@ export default function Jobs() {
                               </span>
                               <div className="text-right">
                                 <span className="font-bold text-emerald-700" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                                  {formatAmount(job.budget_min, myCurrency)}
+                                  {formatBudgetRange(job.budget_min, job.budget_max, myCurrency)}
                                 </span>
-                                <span className="text-xs text-muted-foreground"> - {formatAmount(job.budget_max, myCurrency)}</span>
                               </div>
                             </div>
                           </CardContent>

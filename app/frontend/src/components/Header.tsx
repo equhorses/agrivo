@@ -215,7 +215,11 @@ export default function Header() {
                   <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
                     <User className="h-4 w-4 text-primary" />
                   </div>
-                  <span className="text-sm font-medium">{user.nickname || user.email?.split('@')[0]}</span>
+                  <span className="text-sm font-medium">
+                    {['admin', 'marketing', 'seguridad', 'moderacion', 'soporte'].includes(user.role)
+                      ? 'Equipo Agrivo'
+                      : (user.nickname || user.email?.split('@')[0])}
+                  </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">

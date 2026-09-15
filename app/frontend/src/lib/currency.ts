@@ -20,6 +20,23 @@ export function formatAmount(amountUsd: number | null | undefined, currency: 'US
   return `$${Math.round(amountUsd).toLocaleString('en-US')}`;
 }
 
+/** Igual que formatAmount, pero para un rango — evita mostrar "- $4000"
+ * feo cuando falta el mínimo (o el mínimo y el máximo son iguales). */
+export function formatBudgetRange(
+  min: number | null | undefined,
+  max: number | null | undefined,
+  currency: 'USD' | 'EUR' = 'USD',
+): string {
+  const hasMin = min !== null && min !== undefined && !isNaN(min);
+  const hasMax = max !== null && max !== undefined && !isNaN(max);
+  if (hasMin && hasMax && min !== max) {
+    return `${formatAmount(min, currency)} - ${formatAmount(max, currency)}`;
+  }
+  if (hasMax) return formatAmount(max, currency);
+  if (hasMin) return formatAmount(min, currency);
+  return 'A convenir';
+}
+
 /** Lee la moneda preferida del usuario actual (perfil), USD por defecto —
  * para no repetir esta llamada en cada página que muestra precios. */
 export function useMyCurrency(): 'USD' | 'EUR' {

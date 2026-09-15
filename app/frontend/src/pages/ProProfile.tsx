@@ -149,8 +149,8 @@ export default function ProProfile() {
                 <h2 className="text-xl" style={{ fontFamily: 'Poppins, sans-serif' }}>{pro.display_name}</h2>
                 <div className="flex items-center justify-center gap-1 mt-2">
                   <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
-                  <span className="font-semibold">{pro.rating}</span>
-                  <span className="text-sm text-muted-foreground">· {pro.jobs_completed} trabajos</span>
+                  <span className="font-semibold">{pro.rating ? pro.rating.toFixed(1) : 'Nuevo'}</span>
+                  <span className="text-sm text-muted-foreground">· {pro.jobs_completed ?? 0} trabajos</span>
                 </div>
                 <div className="mt-3">
                   <PlanBadge plan={pro.plan} />

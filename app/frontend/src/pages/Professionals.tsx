@@ -190,8 +190,8 @@ export default function Professionals() {
                               </h4>
                               <div className="flex items-center gap-1 mt-0.5">
                                 <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
-                                <span className="text-sm font-medium">{pro.rating}</span>
-                                <span className="text-xs text-muted-foreground">· {pro.jobs_completed} trabajos</span>
+                                <span className="text-sm font-medium">{pro.rating ? pro.rating.toFixed(1) : 'Nuevo'}</span>
+                                <span className="text-xs text-muted-foreground">· {pro.jobs_completed ?? 0} trabajos</span>
                               </div>
                             </div>
                           </div>

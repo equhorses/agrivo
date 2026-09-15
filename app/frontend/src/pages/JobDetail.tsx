@@ -14,7 +14,7 @@ import { MapPin, Calendar, Clock, Ruler, DollarSign, Send, ArrowLeft, Check, X, 
 import { toast } from 'sonner';
 import { COUNTRIES, SEED_JOBS } from '@/lib/constants';
 import UserIdentity from '@/components/UserIdentity';
-import { formatAmount, useMyCurrency } from '@/lib/currency';
+import { formatAmount, formatBudgetRange, useMyCurrency } from '@/lib/currency';
 
 const client = createClient();
 
@@ -323,7 +323,7 @@ export default function JobDetail() {
                       <DollarSign className="h-5 w-5 text-emerald-600" />
                       <div>
                         <p className="text-xs text-muted-foreground">Presupuesto</p>
-                        <p className="text-sm font-medium">{formatAmount(job.budget_min, myCurrency)} - {formatAmount(job.budget_max, myCurrency)}</p>
+                        <p className="text-sm font-medium">{formatBudgetRange(job.budget_min, job.budget_max, myCurrency)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border">
@@ -557,7 +557,7 @@ export default function JobDetail() {
                           className="mt-1"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
-                          Rango: ${job.budget_min?.toLocaleString()} - ${job.budget_max?.toLocaleString()}
+                          Rango: {formatBudgetRange(job.budget_min, job.budget_max, 'USD')}
                         </p>
                       </div>
                       <div>

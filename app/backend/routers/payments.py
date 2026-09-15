@@ -67,6 +67,13 @@ async def create_checkout(
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except stripe.error.StripeError as e:
+        # El mensaje de Stripe ya es seguro de mostrar (no incluye claves ni
+        # datos sensibles) y es MUCHO más útil que un "no se pudo" genérico
+        # para saber qué está fallando de verdad (precio inválido, moneda,
+        # cuenta de Stripe no verificada, etc.).
+        logger.error(f"Stripe error creating checkout session: {e}")
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Stripe: {str(e)}")
     except Exception as e:
         logger.error(f"Error creating checkout session: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="No se pudo iniciar el pago.")
