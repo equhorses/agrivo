@@ -153,11 +153,11 @@ export default function Pricing() {
           <div className="container">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">Plan Profesional:</span>
+                <span className="text-sm text-muted-foreground">{t('pricing.planProLabel', locale)}</span>
                 <VerifiedBadge />
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">Plan Empresa:</span>
+                <span className="text-sm text-muted-foreground">{t('pricing.planEnterpriseLabel', locale)}</span>
                 <TopProBadge />
               </div>
             </div>
@@ -219,12 +219,12 @@ export default function Pricing() {
                     <CardHeader className="text-center pb-4 pt-8">
                       {plan.popular && (
                         <Badge className="absolute top-4 right-4 bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
-                          Más Popular
+                          {t('pricing.mostPopular', locale)}
                         </Badge>
                       )}
                       {isCurrent && (
                         <Badge className="absolute top-4 left-4 bg-blue-100 text-blue-800 hover:bg-blue-100">
-                          Tu Plan
+                          {t('pricing.yourPlan', locale)}
                         </Badge>
                       )}
                       <div className={`h-14 w-14 rounded-xl flex items-center justify-center mx-auto mb-4 ${
@@ -240,7 +240,7 @@ export default function Pricing() {
                       <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
                       <div className="mt-5">
                         <span className="text-4xl font-bold" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                          {plan.price === 0 ? 'Gratis' : `€${plan.price}`}
+                          {plan.price === 0 ? t('pricing.free', locale) : `€${plan.price}`}
                         </span>
                         {plan.price > 0 && (
                           <span className="text-muted-foreground text-sm">{plan.period}</span>
@@ -282,11 +282,11 @@ export default function Pricing() {
                         variant={plan.popular || plan.id === 'enterprise' ? 'default' : 'outline'}
                       >
                         {isCurrent
-                          ? 'Plan Actual'
+                          ? t('pricing.currentPlan', locale)
                           : loadingPlan === plan.id
-                            ? 'Procesando...'
+                            ? t('pricing.processing', locale)
                             : isActive && plan.price > 0
-                              ? 'Cambiar a este plan'
+                              ? t('pricing.changeToThisPlan', locale)
                               : plan.cta}
                       </Button>
                       {plan.price > 0 && isActive && currentPlan !== plan.id && (

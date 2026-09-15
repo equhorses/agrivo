@@ -9,12 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Briefcase, DollarSign, MessageSquare, TrendingUp } from 'lucide-react';
 import { formatAmount, formatBudgetRange, useMyCurrency } from '@/lib/currency';
+import { t, useLocale } from '@/lib/i18n';
 
 const client = createClient();
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const myCurrency = useMyCurrency();
+  const [locale] = useLocale();
   const [user, setUser] = useState<any>(null);
   const [myJobs, setMyJobs] = useState<any[]>([]);
   const [myBids, setMyBids] = useState<any[]>([]);
@@ -79,12 +81,12 @@ export default function Dashboard() {
           {/* Welcome */}
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-2xl md:text-3xl">¡Hola, {user.nickname || user.email?.split('@')[0]}!</h1>
-              <p className="text-muted-foreground mt-1">Gestiona tus trabajos y ofertas desde aquí</p>
+              <h1 className="text-2xl md:text-3xl">{t('dashboard.hello', locale)}, {user.nickname || user.email?.split('@')[0]}!</h1>
+              <p className="text-muted-foreground mt-1">{t('dashboard.subtitle', locale)}</p>
             </div>
             <Button onClick={() => navigate('/jobs/new')} className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 cursor-pointer">
               <Plus className="h-4 w-4 mr-2" />
-              Publicar Trabajo
+              {t('jobs.publish', locale)}
             </Button>
           </div>
 
@@ -97,7 +99,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold" style={{ fontFamily: 'Poppins, sans-serif' }}>{myJobs.length}</p>
-                  <p className="text-xs text-muted-foreground">Mis Trabajos</p>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.myJobs', locale)}</p>
                 </div>
               </CardContent>
             </Card>
@@ -108,7 +110,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold" style={{ fontFamily: 'Poppins, sans-serif' }}>{myBids.length}</p>
-                  <p className="text-xs text-muted-foreground">Mis Ofertas</p>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.myOffers', locale)}</p>
                 </div>
               </CardContent>
             </Card>
@@ -121,7 +123,7 @@ export default function Dashboard() {
                   <p className="text-2xl font-bold" style={{ fontFamily: 'Poppins, sans-serif' }}>
                     {myJobs.filter(j => j.status === 'open').length}
                   </p>
-                  <p className="text-xs text-muted-foreground">Activos</p>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.active', locale)}</p>
                 </div>
               </CardContent>
             </Card>
@@ -132,7 +134,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold" style={{ fontFamily: 'Poppins, sans-serif' }}>0</p>
-                  <p className="text-xs text-muted-foreground">Mensajes</p>
+                  <p className="text-xs text-muted-foreground">{t('nav.messages', locale)}</p>
                 </div>
               </CardContent>
             </Card>
@@ -141,8 +143,8 @@ export default function Dashboard() {
           {/* Tabs */}
           <Tabs defaultValue="jobs" className="space-y-4">
             <TabsList className="bg-white">
-              <TabsTrigger value="jobs" className="cursor-pointer">Mis Trabajos</TabsTrigger>
-              <TabsTrigger value="bids" className="cursor-pointer">Mis Ofertas</TabsTrigger>
+              <TabsTrigger value="jobs" className="cursor-pointer">{t('dashboard.myJobs', locale)}</TabsTrigger>
+              <TabsTrigger value="bids" className="cursor-pointer">{t('dashboard.myOffers', locale)}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="jobs">
@@ -175,7 +177,7 @@ export default function Dashboard() {
                                 : job.status === 'expired' ? 'bg-slate-200 text-slate-700 hover:bg-slate-200'
                                 : 'bg-amber-100 text-amber-800 hover:bg-amber-100'
                               }`}>
-                                {job.status === 'open' ? 'Abierto' : job.status === 'expired' ? 'Expirado' : 'En Progreso'}
+                                {job.status === 'open' ? t('status.open', locale) : job.status === 'expired' ? t('status.expired', locale) : t('status.inProgress', locale)}
                               </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground">
@@ -194,10 +196,10 @@ export default function Dashboard() {
                 <Card className="bg-white">
                   <CardContent className="p-10 text-center">
                     <Briefcase className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                    <h3 style={{ fontFamily: 'Poppins, sans-serif' }}>No tienes trabajos publicados</h3>
-                    <p className="text-muted-foreground mt-2">Publica tu primer trabajo y recibe ofertas de profesionales</p>
+                    <h3 style={{ fontFamily: 'Poppins, sans-serif' }}>{t('dashboard.noJobsPublished', locale)}</h3>
+                    <p className="text-muted-foreground mt-2">{t('dashboard.publishFirstJob', locale)}</p>
                     <Button onClick={() => navigate('/jobs/new')} className="mt-4 bg-gradient-to-r from-emerald-600 to-teal-600 cursor-pointer">
-                      Publicar Trabajo
+                      {t('jobs.publish', locale)}
                     </Button>
                   </CardContent>
                 </Card>
@@ -238,7 +240,7 @@ export default function Dashboard() {
                                   <h4 className="font-semibold" style={{ fontFamily: 'Poppins, sans-serif' }}>Oferta #{bid.id}</h4>
                                 )}
                                 <Badge variant="outline" className="text-xs">
-                                  {bid.status === 'pending' ? 'Pendiente' : bid.status === 'accepted' ? 'Aceptada' : 'Rechazada'}
+                                  {bid.status === 'pending' ? t('status.pending', locale) : bid.status === 'accepted' ? t('status.accepted', locale) : t('status.rejected', locale)}
                                 </Badge>
                               </div>
                               <p className="text-sm text-muted-foreground">
@@ -272,10 +274,10 @@ export default function Dashboard() {
                 <Card className="bg-white">
                   <CardContent className="p-10 text-center">
                     <DollarSign className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                    <h3 style={{ fontFamily: 'Poppins, sans-serif' }}>No tienes ofertas enviadas</h3>
-                    <p className="text-muted-foreground mt-2">Explora trabajos disponibles y envía tu primera oferta</p>
+                    <h3 style={{ fontFamily: 'Poppins, sans-serif' }}>{t('dashboard.noBidsSent', locale)}</h3>
+                    <p className="text-muted-foreground mt-2">{t('dashboard.exploreAndBid', locale)}</p>
                     <Button onClick={() => navigate('/jobs')} className="mt-4 bg-gradient-to-r from-emerald-600 to-teal-600 cursor-pointer">
-                      Explorar Trabajos
+                      {t('dashboard.exploreJobs', locale)}
                     </Button>
                   </CardContent>
                 </Card>
