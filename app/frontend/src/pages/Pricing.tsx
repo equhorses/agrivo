@@ -170,10 +170,10 @@ export default function Pricing() {
             <div className="container max-w-3xl">
               <div className="p-5 rounded-xl border bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Tu suscripción</p>
+                  <p className="text-sm text-muted-foreground">{t('pricing.yourSubscriptionStatus', locale)}</p>
                   <p className="font-semibold">
-                    Plan {subscription.plan === 'enterprise' ? 'Empresa' : 'Profesional'} —{' '}
-                    {isActive ? (subscription.cancel_at_period_end ? 'se cancela al final del período' : 'activa') : 'inactiva'}
+                    {t('pricing.planWord', locale)} {subscription.plan === 'enterprise' ? t('plan.enterprise.name', locale) : t('plan.pro.name', locale)} —{' '}
+                    {isActive ? (subscription.cancel_at_period_end ? t('pricing.statusCancelling', locale) : t('pricing.statusActive', locale)) : t('pricing.statusInactive', locale)}
                     {subscription.subscription_end_date && (
                       <span className="text-muted-foreground font-normal">
                         {' '}({new Date(subscription.subscription_end_date).toLocaleDateString('es-ES')})
@@ -185,12 +185,12 @@ export default function Pricing() {
                   subscription.cancel_at_period_end ? (
                     <Button variant="outline" size="sm" disabled={actionLoading} onClick={handleResume} className="cursor-pointer">
                       {actionLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
-                      Reactivar suscripción
+                      {t('account.resumeSubscription', locale)}
                     </Button>
                   ) : (
                     <Button variant="outline" size="sm" disabled={actionLoading} onClick={handleCancel} className="cursor-pointer">
                       {actionLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
-                      Cancelar suscripción
+                      {t('account.cancelSubscription', locale)}
                     </Button>
                   )
                 )}
@@ -236,14 +236,14 @@ export default function Pricing() {
                       }`}>
                         <Icon className="h-7 w-7" />
                       </div>
-                      <CardTitle className="text-xl" style={{ fontFamily: 'Poppins, sans-serif' }}>{plan.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
+                      <CardTitle className="text-xl" style={{ fontFamily: 'Poppins, sans-serif' }}>{t(`plan.${plan.id}.name`, locale)}</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">{t(`plan.${plan.id}.description`, locale)}</p>
                       <div className="mt-5">
                         <span className="text-4xl font-bold" style={{ fontFamily: 'Poppins, sans-serif' }}>
                           {plan.price === 0 ? t('pricing.free', locale) : `€${plan.price}`}
                         </span>
                         {plan.price > 0 && (
-                          <span className="text-muted-foreground text-sm">{plan.period}</span>
+                          <span className="text-muted-foreground text-sm">{t('pricing.perMonth', locale)}</span>
                         )}
                       </div>
                       {/* Show badge preview */}
@@ -265,7 +265,7 @@ export default function Pricing() {
                             }`}>
                               <Check className="h-3 w-3" />
                             </div>
-                            <span>{feature}</span>
+                            <span>{t(`plan.${plan.id}.feature.${i}`, locale)}</span>
                           </li>
                         ))}
                       </ul>
@@ -287,11 +287,11 @@ export default function Pricing() {
                             ? t('pricing.processing', locale)
                             : isActive && plan.price > 0
                               ? t('pricing.changeToThisPlan', locale)
-                              : plan.cta}
+                              : t(`plan.${plan.id}.cta`, locale)}
                       </Button>
                       {plan.price > 0 && isActive && currentPlan !== plan.id && (
                         <p className="text-xs text-center text-muted-foreground">
-                          * Se aplica prorrateo por los días restantes del ciclo actual
+                          {t('pricing.prorationNote', locale)}
                         </p>
                       )}
                     </CardContent>
@@ -306,11 +306,9 @@ export default function Pricing() {
         <section className="py-8 bg-white border-t">
           <div className="container max-w-3xl">
             <div className="p-5 rounded-xl border bg-emerald-50/50 border-emerald-200">
-              <h4 className="font-semibold text-sm" style={{ fontFamily: 'Poppins, sans-serif' }}>💡 Sobre cambios de plan</h4>
+              <h4 className="font-semibold text-sm" style={{ fontFamily: 'Poppins, sans-serif' }}>{t('pricing.prorationTitle', locale)}</h4>
               <p className="text-sm text-muted-foreground mt-1">
-                Si cambias de plan, solo pagarás la diferencia proporcional a los días restantes de tu ciclo actual (prorrateo). 
-                Por ejemplo, si llevas 15 días con el plan Profesional (€19/mes) y subes a Empresa (€29/mes), 
-                solo pagarás €5 por los 15 días restantes.
+                {t('pricing.prorationText', locale)}
               </p>
             </div>
           </div>
@@ -319,14 +317,14 @@ export default function Pricing() {
         {/* FAQ */}
         <section className="py-16 bg-slate-50 border-t">
           <div className="container max-w-3xl">
-            <h2 className="text-center mb-10">Preguntas frecuentes</h2>
+            <h2 className="text-center mb-10">{t('pricing.faqTitle', locale)}</h2>
             <div className="space-y-4">
               {[
-                { q: '¿Puedo cambiar de plan en cualquier momento?', a: 'Sí, puedes actualizar o degradar tu plan cuando quieras. Al subir de plan, se aplica prorrateo automático: solo pagas la diferencia por los días restantes del ciclo.' },
-                { q: '¿Qué métodos de pago aceptan?', a: 'Aceptamos todas las tarjetas de crédito y débito principales (Visa, Mastercard, American Express) a través de Stripe.' },
-                { q: '¿Qué incluye la insignia Verificado?', a: 'La insignia Verificado (plan Profesional) confirma que has completado el proceso KYC y tus credenciales han sido validadas. Aparece junto a tu nombre en todo el marketplace.' },
-                { q: '¿Qué ventajas tiene ser Top Pro?', a: 'Los Top Pro (plan Empresa) aparecen destacados en la portada, tienen una insignia dorada exclusiva, mayor visibilidad en búsquedas y acceso a analíticas avanzadas.' },
-                { q: '¿Puedo cancelar mi suscripción?', a: 'Puedes cancelar en cualquier momento sin penalización. Tu plan seguirá activo hasta el final del período pagado.' },
+                { q: t('pricing.faq.0.q', locale), a: t('pricing.faq.0.a', locale) },
+                { q: t('pricing.faq.1.q', locale), a: t('pricing.faq.1.a', locale) },
+                { q: t('pricing.faq.2.q', locale), a: t('pricing.faq.2.a', locale) },
+                { q: t('pricing.faq.3.q', locale), a: t('pricing.faq.3.a', locale) },
+                { q: t('pricing.faq.4.q', locale), a: t('pricing.faq.4.a', locale) },
               ].map((faq, i) => (
                 <div key={i} className="p-5 rounded-xl border bg-white">
                   <h4 className="font-semibold" style={{ fontFamily: 'Poppins, sans-serif' }}>{faq.q}</h4>
