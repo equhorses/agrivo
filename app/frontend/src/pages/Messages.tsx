@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Send, MessageSquare, User } from 'lucide-react';
 import { toast } from 'sonner';
+import { t, useLocale } from '@/lib/i18n';
 
 const client = createClient();
 
@@ -31,6 +32,7 @@ interface Message {
 
 export default function Messages() {
   const [searchParams] = useSearchParams();
+  const [locale] = useLocale();
   const [user, setUser] = useState<any>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConv, setSelectedConv] = useState<string | null>(null);
@@ -148,14 +150,14 @@ export default function Messages() {
 
       <main className="flex-1 bg-slate-50">
         <div className="container py-6">
-          <h1 className="text-2xl md:text-3xl mb-6">Mensajes</h1>
+          <h1 className="text-2xl md:text-3xl mb-6">{t('messages.title', locale)}</h1>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[600px]">
             {/* Conversation List */}
             <Card className="bg-white overflow-hidden">
               <CardContent className="p-0">
                 <div className="p-4 border-b">
-                  <h3 className="font-semibold text-sm" style={{ fontFamily: 'Poppins, sans-serif' }}>Conversaciones</h3>
+                  <h3 className="font-semibold text-sm" style={{ fontFamily: 'Poppins, sans-serif' }}>{t('messages.conversations', locale)}</h3>
                 </div>
                 <div className="overflow-y-auto h-[540px]">
                   {loading ? (
@@ -196,8 +198,8 @@ export default function Messages() {
                   ) : (
                     <div className="p-8 text-center">
                       <MessageSquare className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                      <p className="text-sm text-muted-foreground">No tienes conversaciones aún</p>
-                      <p className="text-xs text-muted-foreground mt-1">Contacta a un profesional para iniciar</p>
+                      <p className="text-sm text-muted-foreground">{t('messages.noConversations', locale)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t('messages.contactToStart', locale)}</p>
                     </div>
                   )}
                 </div>
@@ -247,7 +249,7 @@ export default function Messages() {
                       <Input
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Escribe un mensaje..."
+                        placeholder={t('messages.typePlaceholder', locale)}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
                         className="flex-1"
                       />
@@ -260,7 +262,7 @@ export default function Messages() {
                   <div className="flex-1 flex items-center justify-center">
                     <div className="text-center">
                       <MessageSquare className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-                      <p className="text-muted-foreground">Selecciona una conversación</p>
+                      <p className="text-muted-foreground">{t('messages.selectConversation', locale)}</p>
                     </div>
                   </div>
                 )}

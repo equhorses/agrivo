@@ -11,12 +11,14 @@ import { Star, MapPin, Briefcase, Calendar, MessageSquare, ArrowLeft, Award } fr
 import { PlanBadge } from '@/components/Badges';
 import { COUNTRIES, SEED_PROFESSIONALS } from '@/lib/constants';
 import { toast } from 'sonner';
+import { t, useLocale } from '@/lib/i18n';
 
 const client = createClient();
 
 export default function ProProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [locale] = useLocale();
   const [pro, setPro] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +90,7 @@ export default function ProProfile() {
       return;
     }
     if (!pro?.user_id) {
-      toast.error('Este es un perfil de ejemplo — no se le puede escribir de verdad.');
+      toast.error(t('proProfile.exampleProfileNotice', locale));
       return;
     }
     navigate(`/messages?with=${pro.user_id}`);
@@ -134,7 +136,7 @@ export default function ProProfile() {
         <div className="container max-w-4xl">
           <Button variant="ghost" onClick={() => navigate('/pros')} className="mb-6 cursor-pointer">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver al directorio
+            {t('proProfile.backToDirectory', locale)}
           </Button>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -182,7 +184,7 @@ export default function ProProfile() {
                   className="w-full mt-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 cursor-pointer"
                 >
                   <MessageSquare className="h-4 w-4 mr-2" />
-                  Contactar
+                  {t('contact', locale)}
                 </Button>
               </CardContent>
             </Card>
@@ -192,7 +194,7 @@ export default function ProProfile() {
               {/* About */}
               <Card className="bg-white">
                 <CardContent className="p-6">
-                  <h3 className="font-semibold mb-3" style={{ fontFamily: 'Poppins, sans-serif' }}>Sobre mí</h3>
+                  <h3 className="font-semibold mb-3" style={{ fontFamily: 'Poppins, sans-serif' }}>{t('proProfile.aboutMe', locale)}</h3>
                   <p className="text-muted-foreground leading-relaxed">
                     {pro.description || 'Este profesional aún no ha completado su descripción.'}
                   </p>
@@ -204,9 +206,9 @@ export default function ProProfile() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                      Reseñas
+                      {t('proProfile.reviews', locale)}
                     </h3>
-                    <Badge variant="outline">{reviews.length} reseñas</Badge>
+                    <Badge variant="outline">{reviews.length} {t('proProfile.reviewsWord', locale)}</Badge>
                   </div>
                   {reviews.length > 0 ? (
                     <div className="space-y-4">
@@ -226,7 +228,7 @@ export default function ProProfile() {
                             </span>
                           </div>
                           <p className="text-sm text-muted-foreground">{review.comment}</p>
-                          <p className="text-xs text-muted-foreground mt-1">— {review.reviewer_name || 'Cliente'}</p>
+                          <p className="text-xs text-muted-foreground mt-1">— {review.reviewer_name || t('proProfile.client', locale)}</p>
 
                           {review.professional_response && (
                             <div className="bg-white border rounded-lg p-3 mt-3">
@@ -246,9 +248,9 @@ export default function ProProfile() {
                                 />
                                 <div className="flex gap-2">
                                   <Button size="sm" disabled={submittingResponse || !responseDraft.trim()} onClick={() => handleSubmitResponse(review.id)} className="cursor-pointer">
-                                    {submittingResponse ? 'Enviando...' : 'Responder'}
+                                    {submittingResponse ? t('jobDetail.sendingReview', locale) : t('jobDetail.respond', locale)}
                                   </Button>
-                                  <Button size="sm" variant="outline" onClick={() => { setRespondingTo(null); setResponseDraft(''); }} className="cursor-pointer">Cancelar</Button>
+                                  <Button size="sm" variant="outline" onClick={() => { setRespondingTo(null); setResponseDraft(''); }} className="cursor-pointer">{t('common.cancel', locale)}</Button>
                                 </div>
                               </div>
                             ) : (
@@ -257,7 +259,7 @@ export default function ProProfile() {
                                 onClick={() => setRespondingTo(review.id)}
                                 className="text-xs text-emerald-700 hover:underline mt-2 cursor-pointer"
                               >
-                                Responder
+                                {t('jobDetail.respond', locale)}
                               </button>
                             )
                           )}
@@ -266,7 +268,7 @@ export default function ProProfile() {
                     </div>
                   ) : (
                     <p className="text-center text-muted-foreground py-6">
-                      Este profesional aún no tiene reseñas
+                      {t('proProfile.noReviewsYet', locale)}
                     </p>
                   )}
                 </CardContent>
