@@ -15,14 +15,9 @@ import { toast } from 'sonner';
 import { COUNTRIES, SEED_JOBS } from '@/lib/constants';
 import UserIdentity from '@/components/UserIdentity';
 import { formatAmount, formatBudgetRange, useMyCurrency } from '@/lib/currency';
+import { t, useLocale } from '@/lib/i18n';
 
 const client = createClient();
-
-const BID_STATUS_LABEL: Record<string, string> = {
-  pending: 'Pendiente',
-  accepted: 'Aceptada',
-  rejected: 'Rechazada',
-};
 
 export default function JobDetail() {
   const { id } = useParams();
@@ -32,6 +27,7 @@ export default function JobDetail() {
   const [existingReview, setExistingReview] = useState<any>(null);
   const [editingReview, setEditingReview] = useState(false);
   const myCurrency = useMyCurrency();
+  const [locale] = useLocale();
   const [acceptedProfessionalProfileId, setAcceptedProfessionalProfileId] = useState<number | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
@@ -238,7 +234,7 @@ export default function JobDetail() {
         <main className="flex-1 container py-10 text-center">
           <h2>Trabajo no encontrado</h2>
           <Button onClick={() => navigate('/jobs')} className="mt-4 cursor-pointer">
-            Volver a trabajos
+            {t('createJob.backToJobs', locale)}
           </Button>
         </main>
         <Footer />
@@ -259,7 +255,7 @@ export default function JobDetail() {
         <div className="container">
           <Button variant="ghost" onClick={() => navigate('/jobs')} className="mb-6 cursor-pointer">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver a trabajos
+            {t('createJob.backToJobs', locale)}
           </Button>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -287,7 +283,7 @@ export default function JobDetail() {
                   {!isSeedJob && job.user_id && (
                     <div className="flex items-center justify-between gap-3 mb-6 pb-6 border-b flex-wrap">
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Publicado por</p>
+                        <p className="text-xs text-muted-foreground mb-1">{t('jobDetail.publishedBy', locale)}</p>
                         <UserIdentity userId={job.user_id} />
                       </div>
                       {!isOwner && (
@@ -298,7 +294,7 @@ export default function JobDetail() {
                           className="cursor-pointer"
                         >
                           <MessageSquare className="h-4 w-4 mr-1" />
-                          Contactar
+                          {t('contact', locale)}
                         </Button>
                       )}
                     </div>
@@ -308,28 +304,28 @@ export default function JobDetail() {
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border">
                       <MapPin className="h-5 w-5 text-emerald-600" />
                       <div>
-                        <p className="text-xs text-muted-foreground">Ubicación</p>
+                        <p className="text-xs text-muted-foreground">{t('jobDetail.location', locale)}</p>
                         <p className="text-sm font-medium">{job.location}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border">
                       <Ruler className="h-5 w-5 text-emerald-600" />
                       <div>
-                        <p className="text-xs text-muted-foreground">Hectáreas</p>
+                        <p className="text-xs text-muted-foreground">{t('jobDetail.hectares', locale)}</p>
                         <p className="text-sm font-medium">{job.hectares || 'N/A'} ha</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border">
                       <DollarSign className="h-5 w-5 text-emerald-600" />
                       <div>
-                        <p className="text-xs text-muted-foreground">Presupuesto</p>
+                        <p className="text-xs text-muted-foreground">{t('jobDetail.budget', locale)}</p>
                         <p className="text-sm font-medium">{formatBudgetRange(job.budget_min, job.budget_max, myCurrency)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border">
                       <Calendar className="h-5 w-5 text-emerald-600" />
                       <div>
-                        <p className="text-xs text-muted-foreground">Publicado</p>
+                        <p className="text-xs text-muted-foreground">{t('jobDetail.published', locale)}</p>
                         <p className="text-sm font-medium">
                           {job.created_at ? new Date(job.created_at).toLocaleDateString('es') : 'Reciente'}
                         </p>
@@ -338,17 +334,17 @@ export default function JobDetail() {
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border">
                       <Clock className="h-5 w-5 text-emerald-600" />
                       <div>
-                        <p className="text-xs text-muted-foreground">Cierre de ofertas</p>
+                        <p className="text-xs text-muted-foreground">{t('jobDetail.biddingClose', locale)}</p>
                         <p className={`text-sm font-medium ${deadlinePassed ? 'text-red-600' : ''}`}>
                           {job.bidding_ends_at
-                            ? `${new Date(job.bidding_ends_at).toLocaleString('es')}${deadlinePassed ? ' (cerrado)' : ''}`
-                            : 'Sin límite de tiempo'}
+                            ? `${new Date(job.bidding_ends_at).toLocaleString('es')}${deadlinePassed ? ` (${t('jobDetail.closed', locale)})` : ''}`
+                            : t('jobDetail.noTimeLimit', locale)}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <h3 className="text-lg mb-3" style={{ fontFamily: 'Poppins, sans-serif' }}>Descripción</h3>
+                  <h3 className="text-lg mb-3" style={{ fontFamily: 'Poppins, sans-serif' }}>{t('jobDetail.description', locale)}</h3>
                   <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
                     {job.description}
                   </p>
@@ -359,7 +355,7 @@ export default function JobDetail() {
               <Card className="bg-white">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                    Ofertas recibidas
+                    {t('jobDetail.offersReceived', locale)}
                     <Badge variant="secondary">{bids.length}</Badge>
                   </CardTitle>
                 </CardHeader>
@@ -388,7 +384,7 @@ export default function JobDetail() {
                                   variant={status === 'accepted' ? 'default' : 'outline'}
                                   className={status === 'accepted' ? 'bg-emerald-600 hover:bg-emerald-600' : status === 'rejected' ? 'text-muted-foreground' : ''}
                                 >
-                                  {BID_STATUS_LABEL[status] || status}
+                                  {t(`status.${status}`, locale)}
                                 </Badge>
                               </div>
                               {isOwner && (
@@ -402,7 +398,7 @@ export default function JobDetail() {
                                         className="bg-emerald-600 hover:bg-emerald-700 cursor-pointer"
                                       >
                                         <Check className="h-4 w-4 mr-1" />
-                                        Aceptar
+                                        {t('jobDetail.accept', locale)}
                                       </Button>
                                       <Button
                                         size="sm"
@@ -412,7 +408,7 @@ export default function JobDetail() {
                                         className="cursor-pointer"
                                       >
                                         <X className="h-4 w-4 mr-1" />
-                                        Rechazar
+                                        {t('jobDetail.reject', locale)}
                                       </Button>
                                     </>
                                   )}
@@ -423,7 +419,7 @@ export default function JobDetail() {
                                     className="cursor-pointer"
                                   >
                                     <MessageSquare className="h-4 w-4 mr-1" />
-                                    Responder
+                                    {t('jobDetail.respond', locale)}
                                   </Button>
                                 </div>
                               )}
@@ -434,7 +430,7 @@ export default function JobDetail() {
                     </div>
                   ) : (
                     <p className="text-center text-muted-foreground py-6">
-                      Aún no hay ofertas. ¡Sé el primero en ofertar!
+                      {t('jobDetail.noOffersYet', locale)}
                     </p>
                   )}
                 </CardContent>
@@ -443,7 +439,7 @@ export default function JobDetail() {
               {isOwner && acceptedProfessionalProfileId && (
                 <Card className="bg-white mt-6">
                   <CardHeader>
-                    <CardTitle>Reseña del profesional</CardTitle>
+                    <CardTitle>{t('jobDetail.professionalReview', locale)}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {existingReview ? (
@@ -463,7 +459,7 @@ export default function JobDetail() {
                           />
                           <div className="flex gap-2">
                             <Button onClick={handleUpdateReview} disabled={submittingReview || !reviewComment.trim()} className="cursor-pointer">
-                              {submittingReview ? 'Guardando...' : 'Guardar cambios'}
+                              {submittingReview ? t('jobDetail.savingReview', locale) : t('jobDetail.saveChanges', locale)}
                             </Button>
                             <Button variant="outline" onClick={() => setEditingReview(false)} className="cursor-pointer">Cancelar</Button>
                           </div>
@@ -478,13 +474,13 @@ export default function JobDetail() {
                           <p className="text-sm text-muted-foreground mb-3">{existingReview.comment}</p>
                           {existingReview.professional_response && (
                             <div className="bg-slate-50 border rounded-lg p-3 mb-3">
-                              <p className="text-xs font-medium text-emerald-700 mb-1">Respuesta del profesional</p>
+                              <p className="text-xs font-medium text-emerald-700 mb-1">{t('jobDetail.professionalResponse', locale)}</p>
                               <p className="text-sm text-muted-foreground">{existingReview.professional_response}</p>
                             </div>
                           )}
                           <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={handleStartEditReview} className="cursor-pointer">Editar</Button>
-                            <Button size="sm" variant="outline" onClick={handleDeleteReview} className="cursor-pointer text-red-600">Borrar</Button>
+                            <Button size="sm" variant="outline" onClick={handleStartEditReview} className="cursor-pointer">{t('jobDetail.edit', locale)}</Button>
+                            <Button size="sm" variant="outline" onClick={handleDeleteReview} className="cursor-pointer text-red-600">{t('jobDetail.delete', locale)}</Button>
                           </div>
                         </div>
                       )
@@ -503,7 +499,7 @@ export default function JobDetail() {
                         <Textarea
                           value={reviewComment}
                           onChange={(e) => setReviewComment(e.target.value)}
-                          placeholder="Cuenta tu experiencia..."
+                          placeholder={t('jobDetail.reviewPlaceholder', locale)}
                           rows={3}
                         />
                         <Button
@@ -511,7 +507,7 @@ export default function JobDetail() {
                           disabled={submittingReview || !reviewComment.trim()}
                           className="cursor-pointer"
                         >
-                          {submittingReview ? 'Enviando...' : 'Publicar reseña'}
+                          {submittingReview ? t('jobDetail.sendingReview', locale) : t('jobDetail.publishReview', locale)}
                         </Button>
                       </div>
                     )}
@@ -524,30 +520,30 @@ export default function JobDetail() {
             <div className="space-y-6">
               <Card className="sticky top-24 bg-white">
                 <CardHeader>
-                  <CardTitle style={{ fontFamily: 'Poppins, sans-serif' }}>Enviar una oferta</CardTitle>
+                  <CardTitle style={{ fontFamily: 'Poppins, sans-serif' }}>{t('jobDetail.sendOffer', locale)}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {isSeedJob ? (
                     <div className="text-center py-4 space-y-3">
                       <p className="text-sm text-muted-foreground">
-                        Esto es un trabajo de ejemplo para mostrar cómo funciona Agrivo — no puedes pujar aquí de verdad.
+                        {t('jobDetail.exampleJobNotice', locale)}
                       </p>
                       <Button
                         onClick={() => navigate('/jobs/new')}
                         className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 cursor-pointer"
                       >
                         <Plus className="h-4 w-4 mr-2" />
-                        Publicar un trabajo real
+                        {t('jobDetail.postRealJob', locale)}
                       </Button>
                     </div>
                   ) : isOwner ? (
                     <p className="text-center text-muted-foreground py-4">
-                      Este es tu trabajo. Gestiona las ofertas recibidas a la izquierda.
+                      {t('jobDetail.thisIsYourJob', locale)}
                     </p>
                   ) : canReceiveBids ? (
                     <>
                       <div>
-                        <Label htmlFor="bid-amount">Tu oferta (USD)</Label>
+                        <Label htmlFor="bid-amount">{t('jobDetail.yourOffer', locale)}</Label>
                         <Input
                           id="bid-amount"
                           type="number"
@@ -557,11 +553,11 @@ export default function JobDetail() {
                           className="mt-1"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
-                          Rango: {formatBudgetRange(job.budget_min, job.budget_max, 'USD')}
+                          {t('jobDetail.range', locale)}: {formatBudgetRange(job.budget_min, job.budget_max, 'USD')}
                         </p>
                       </div>
                       <div>
-                        <Label htmlFor="bid-message">Mensaje (opcional)</Label>
+                        <Label htmlFor="bid-message">{t('jobDetail.optionalMessage', locale)}</Label>
                         <Textarea
                           id="bid-message"
                           placeholder="Describe tu experiencia y por qué eres el candidato ideal..."
@@ -579,7 +575,7 @@ export default function JobDetail() {
                         {submitting ? 'Enviando...' : (
                           <>
                             <Send className="h-4 w-4 mr-2" />
-                            Enviar Oferta
+                            {t('jobDetail.sendOfferBtn', locale)}
                           </>
                         )}
                       </Button>
@@ -591,26 +587,26 @@ export default function JobDetail() {
                     </>
                   ) : (
                     <p className="text-center text-muted-foreground py-4">
-                      {deadlinePassed ? 'Se cerró el plazo para enviar ofertas' : 'Este trabajo ya no acepta ofertas'}
+                      {deadlinePassed ? t('jobDetail.deadlinePassedMsg', locale) : t('jobDetail.noLongerAccepting', locale)}
                     </p>
                   )}
 
                   <Separator />
 
                   <div className="space-y-3">
-                    <h4 className="font-semibold text-sm" style={{ fontFamily: 'Poppins, sans-serif' }}>Resumen</h4>
+                    <h4 className="font-semibold text-sm" style={{ fontFamily: 'Poppins, sans-serif' }}>{t('jobDetail.summary', locale)}</h4>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Categoría</span>
+                      <span className="text-muted-foreground">{t('jobDetail.category', locale)}</span>
                       <span className="font-medium">{job.category}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Tipo</span>
+                      <span className="text-muted-foreground">{t('jobDetail.type', locale)}</span>
                       <span className="font-medium">
                         {job.contract_type === 'reverse_auction' ? 'Subasta Inversa' : 'Precio Fijo'}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Ofertas</span>
+                      <span className="text-muted-foreground">{t('jobDetail.offers', locale)}</span>
                       <span className="font-medium">{bids.length}</span>
                     </div>
                   </div>
