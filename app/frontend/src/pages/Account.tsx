@@ -19,6 +19,7 @@ import { User, MessageSquare, Briefcase, CreditCard, Trash2 } from 'lucide-react
 import { toast } from 'sonner';
 import { COUNTRIES } from '@/lib/constants';
 import { getBackendErrorMessage } from '@/lib/errors';
+import { t, useLocale } from '@/lib/i18n';
 
 const client = createClient();
 
@@ -26,6 +27,7 @@ const PLAN_LABEL: Record<string, string> = { free: 'Free', pro: 'Pro', enterpris
 
 export default function Account() {
   const navigate = useNavigate();
+  const [locale] = useLocale();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [profileId, setProfileId] = useState<number | null>(null);
@@ -175,24 +177,24 @@ export default function Account() {
       <Header />
       <main className="flex-1 py-8 bg-slate-50">
         <div className="container max-w-3xl">
-          <h1 className="text-2xl md:text-3xl mb-6" style={{ fontFamily: 'Poppins, sans-serif' }}>Mi cuenta</h1>
+          <h1 className="text-2xl md:text-3xl mb-6" style={{ fontFamily: 'Poppins, sans-serif' }}>{t('account.title', locale)}</h1>
 
           <Tabs defaultValue="perfil">
             <TabsList className="mb-6 flex-wrap h-auto">
-              <TabsTrigger value="perfil" className="cursor-pointer"><User className="h-4 w-4 mr-1" />Perfil</TabsTrigger>
-              <TabsTrigger value="suscripcion" className="cursor-pointer"><CreditCard className="h-4 w-4 mr-1" />Suscripción</TabsTrigger>
-              <TabsTrigger value="anuncios" className="cursor-pointer"><Briefcase className="h-4 w-4 mr-1" />Mis anuncios</TabsTrigger>
-              <TabsTrigger value="cuenta" className="cursor-pointer">Cuenta</TabsTrigger>
+              <TabsTrigger value="perfil" className="cursor-pointer"><User className="h-4 w-4 mr-1" />{t('account.tabProfile', locale)}</TabsTrigger>
+              <TabsTrigger value="suscripcion" className="cursor-pointer"><CreditCard className="h-4 w-4 mr-1" />{t('account.tabSubscription', locale)}</TabsTrigger>
+              <TabsTrigger value="anuncios" className="cursor-pointer"><Briefcase className="h-4 w-4 mr-1" />{t('account.tabAds', locale)}</TabsTrigger>
+              <TabsTrigger value="cuenta" className="cursor-pointer">{t('account.tabAccount', locale)}</TabsTrigger>
             </TabsList>
 
             {/* ---- Perfil ---- */}
             <TabsContent value="perfil">
               <Card className="bg-white">
-                <CardHeader><CardTitle>Datos de tu perfil</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t('account.profileData', locale)}</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   {!profileId && !isStaff && (
                     <p className="text-sm text-muted-foreground bg-amber-50 border border-amber-200 rounded-lg p-3">
-                      Todavía no has completado tu perfil. Rellena esto y guarda para poder publicar trabajos.
+                      {t('account.incompleteProfile', locale)}
                     </p>
                   )}
 
@@ -206,20 +208,20 @@ export default function Account() {
                     )}
                     <div>
                       <Label htmlFor="avatar" className="cursor-pointer text-sm text-emerald-700 hover:underline">
-                        {avatarUploading ? 'Subiendo...' : 'Cambiar foto'}
+                        {avatarUploading ? t('account.uploading', locale) : t('account.changePhoto', locale)}
                       </Label>
                       <input id="avatar" type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} disabled={avatarUploading} />
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="display_name">Nombre *</Label>
+                    <Label htmlFor="display_name">{t('account.name', locale)} *</Label>
                     <Input id="display_name" value={form.display_name} onChange={(e) => updateField('display_name', e.target.value)} className="mt-1" />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label>País *</Label>
+                      <Label>{t('account.country', locale)} *</Label>
                       <Select value={form.country} onValueChange={(v) => updateField('country', v)}>
                         <SelectTrigger className="mt-1"><SelectValue placeholder="Selecciona un país" /></SelectTrigger>
                         <SelectContent>
@@ -230,13 +232,13 @@ export default function Account() {
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="phone">Teléfono</Label>
+                      <Label htmlFor="phone">{t('account.phone', locale)}</Label>
                       <Input id="phone" value={form.phone} onChange={(e) => updateField('phone', e.target.value)} placeholder="Ej: +34 600 000 000" className="mt-1" />
                     </div>
                   </div>
 
                   <div>
-                    <Label>Moneda preferida</Label>
+                    <Label>{t('account.preferredCurrency', locale)}</Label>
                     <Select value={form.currency} onValueChange={(v) => updateField('currency', v)}>
                       <SelectTrigger className="mt-1 max-w-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -251,12 +253,12 @@ export default function Account() {
                   </div>
 
                   <div>
-                    <Label htmlFor="description">Sobre ti (opcional)</Label>
+                    <Label htmlFor="description">{t('account.aboutYou', locale)}</Label>
                     <Textarea id="description" value={form.description} onChange={(e) => updateField('description', e.target.value)} rows={3} className="mt-1" />
                   </div>
 
                   <Button onClick={handleSaveProfile} disabled={savingProfile} className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 cursor-pointer">
-                    {savingProfile ? 'Guardando...' : 'Guardar cambios'}
+                    {savingProfile ? t('account.saving', locale) : t('account.saveChanges', locale)}
                   </Button>
                 </CardContent>
               </Card>
@@ -265,7 +267,7 @@ export default function Account() {
             {/* ---- Suscripción ---- */}
             <TabsContent value="suscripcion">
               <Card className="bg-white">
-                <CardHeader><CardTitle>Tu suscripción</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t('account.yourSubscription', locale)}</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center gap-3">
                     <Badge className="text-sm bg-emerald-600 hover:bg-emerald-600">{PLAN_LABEL[plan] || plan}</Badge>
@@ -279,24 +281,24 @@ export default function Account() {
                   {plan === 'free' ? (
                     <div>
                       <p className="text-sm text-muted-foreground mb-3">
-                        Estás en el plan gratuito (máximo 3 trabajos/mes). Mejora tu plan para publicar sin límite.
+                        {t('account.onFreePlan', locale)}
                       </p>
-                      <Button onClick={() => navigate('/precios')} className="cursor-pointer">Ver planes</Button>
+                      <Button onClick={() => navigate('/precios')} className="cursor-pointer">{t('account.viewPlans', locale)}</Button>
                     </div>
                   ) : (
                     <div className="flex flex-wrap gap-2">
                       {subscription?.cancel_at_period_end ? (
                         <Button variant="outline" disabled={subActionLoading} onClick={() => handleSubAction('resume')} className="cursor-pointer">
-                          Reanudar suscripción
+                          {t('account.resumeSubscription', locale)}
                         </Button>
                       ) : (
                         <Button variant="outline" disabled={subActionLoading} onClick={() => handleSubAction('cancel')} className="cursor-pointer">
-                          Cancelar suscripción
+                          {t('account.cancelSubscription', locale)}
                         </Button>
                       )}
-                      <Button variant="outline" onClick={() => navigate('/precios')} className="cursor-pointer">Cambiar de plan</Button>
+                      <Button variant="outline" onClick={() => navigate('/precios')} className="cursor-pointer">{t('account.changePlan', locale)}</Button>
                       {plan === 'enterprise' && (
-                        <Button variant="outline" onClick={() => navigate('/analytics')} className="cursor-pointer">Ver mis analíticas</Button>
+                        <Button variant="outline" onClick={() => navigate('/analytics')} className="cursor-pointer">{t('account.viewAnalytics', locale)}</Button>
                       )}
                     </div>
                   )}
@@ -307,10 +309,10 @@ export default function Account() {
             {/* ---- Mis anuncios ---- */}
             <TabsContent value="anuncios">
               <Card className="bg-white">
-                <CardHeader><CardTitle>Trabajos que has publicado</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t('account.jobsPublished', locale)}</CardTitle></CardHeader>
                 <CardContent>
                   {myJobs.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Todavía no has publicado ningún trabajo.</p>
+                    <p className="text-sm text-muted-foreground">{t('account.noJobsPublishedYet', locale)}</p>
                   ) : (
                     <div className="space-y-3">
                       {myJobs.map((job) => (
@@ -326,7 +328,7 @@ export default function Account() {
                   )}
                   <div className="flex gap-2 mt-4">
                     <Button variant="outline" onClick={() => navigate('/messages')} className="cursor-pointer">
-                      <MessageSquare className="h-4 w-4 mr-1" />Ir a mensajes
+                      <MessageSquare className="h-4 w-4 mr-1" />{t('account.goToMessages', locale)}
                     </Button>
                   </div>
                 </CardContent>
@@ -336,28 +338,28 @@ export default function Account() {
             {/* ---- Cuenta ---- */}
             <TabsContent value="cuenta">
               <Card className="bg-white border-red-200">
-                <CardHeader><CardTitle className="text-red-700">Eliminar cuenta</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="text-red-700">{t('account.deleteAccount', locale)}</CardTitle></CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Se marcará tu cuenta para eliminación. Tus datos se conservan durante un periodo legal antes de borrarse en firme.
+                    {t('account.deleteAccountWarning', locale)}
                   </p>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" className="cursor-pointer">
-                        <Trash2 className="h-4 w-4 mr-1" />Eliminar mi cuenta
+                        <Trash2 className="h-4 w-4 mr-1" />{t('account.deleteMyAccount', locale)}
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>¿Seguro que quieres eliminar tu cuenta?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('account.deleteConfirmTitle', locale)}</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Esta acción cierra tu sesión y programa el borrado de tu cuenta. No podrás deshacerlo desde aquí después.
+                          {t('account.deleteConfirmDesc', locale)}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel className="cursor-pointer">Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel className="cursor-pointer">{t('common.cancel', locale)}</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDeleteAccount} disabled={deleting} className="bg-red-600 hover:bg-red-700 cursor-pointer">
-                          Sí, eliminar mi cuenta
+                          {t('account.deleteConfirmYes', locale)}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

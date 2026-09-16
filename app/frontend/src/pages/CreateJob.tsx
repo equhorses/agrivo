@@ -14,11 +14,13 @@ import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { COUNTRIES, CATEGORIES } from '@/lib/constants';
 import { getBackendErrorMessage } from '@/lib/errors';
+import { t, useLocale } from '@/lib/i18n';
 
 const client = createClient();
 
 export default function CreateJob() {
   const navigate = useNavigate();
+  const [locale] = useLocale();
   const [user, setUser] = useState<any>(null);
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [hasProfile, setHasProfile] = useState(true);
@@ -131,22 +133,21 @@ export default function CreateJob() {
           <div className="container max-w-2xl">
             <Button variant="ghost" onClick={() => navigate('/jobs')} className="mb-6 cursor-pointer">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver a trabajos
+              {t('createJob.backToJobs', locale)}
             </Button>
             <Card className="bg-white">
               <CardContent className="p-10 text-center">
                 <h3 className="text-xl mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                  Completa tu perfil antes de publicar
+                  {t('createJob.completeProfileFirst', locale)}
                 </h3>
                 <p className="text-muted-foreground mb-6">
-                  Para publicar un trabajo necesitamos algunos datos tuyos primero — así los profesionales
-                  saben con quién van a trabajar, y nosotros podemos verificar tu cuenta.
+                  {t('createJob.completeProfileDesc', locale)}
                 </p>
                 <Button
                   onClick={() => navigate('/account')}
                   className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 cursor-pointer"
                 >
-                  Completar mi perfil
+                  {t('createJob.completeMyProfile', locale)}
                 </Button>
               </CardContent>
             </Card>
@@ -165,23 +166,23 @@ export default function CreateJob() {
         <div className="container max-w-2xl">
           <Button variant="ghost" onClick={() => navigate('/jobs')} className="mb-6 cursor-pointer">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Volver a trabajos
+            {t('createJob.backToJobs', locale)}
           </Button>
 
           <Card className="bg-white">
             <CardHeader>
-              <CardTitle className="text-2xl" style={{ fontFamily: 'Poppins, sans-serif' }}>Publicar nuevo trabajo</CardTitle>
+              <CardTitle className="text-2xl" style={{ fontFamily: 'Poppins, sans-serif' }}>{t('createJob.title', locale)}</CardTitle>
               <p className="text-muted-foreground">
-                Describe tu necesidad y recibe ofertas de profesionales verificados
+                {t('createJob.subtitle', locale)}
               </p>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <Label htmlFor="title">Título del trabajo *</Label>
+                  <Label htmlFor="title">{t('createJob.jobTitle', locale)} *</Label>
                   <Input
                     id="title"
-                    placeholder="Ej: Fumigación aérea para 500 hectáreas de soja"
+                    placeholder={t('createJob.jobTitlePlaceholder', locale)}
                     value={form.title}
                     onChange={(e) => updateField('title', e.target.value)}
                     className="mt-1"
@@ -189,10 +190,10 @@ export default function CreateJob() {
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Descripción</Label>
+                  <Label htmlFor="description">{t('createJob.description', locale)}</Label>
                   <Textarea
                     id="description"
-                    placeholder="Describe los detalles del trabajo, requisitos específicos, plazos..."
+                    placeholder={t('createJob.descriptionPlaceholder', locale)}
                     value={form.description}
                     onChange={(e) => updateField('description', e.target.value)}
                     className="mt-1"
@@ -202,10 +203,10 @@ export default function CreateJob() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>Categoría *</Label>
+                    <Label>{t('createJob.category', locale)} *</Label>
                     <Select value={form.category} onValueChange={(v) => updateField('category', v)}>
                       <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Seleccionar categoría" />
+                        <SelectValue placeholder={t('createJob.selectCategory', locale)} />
                       </SelectTrigger>
                       <SelectContent>
                         {CATEGORIES.map((cat) => (
@@ -215,14 +216,14 @@ export default function CreateJob() {
                     </Select>
                   </div>
                   <div>
-                    <Label>Tipo de contratación</Label>
+                    <Label>{t('createJob.contractType', locale)}</Label>
                     <Select value={form.contract_type} onValueChange={(v) => updateField('contract_type', v)}>
                       <SelectTrigger className="mt-1">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="reverse_auction">Subasta Inversa</SelectItem>
-                        <SelectItem value="fixed_price">Precio Fijo</SelectItem>
+                        <SelectItem value="reverse_auction">{t('createJob.reverseAuction', locale)}</SelectItem>
+                        <SelectItem value="fixed_price">{t('createJob.fixedPrice', locale)}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -230,10 +231,10 @@ export default function CreateJob() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>País *</Label>
+                    <Label>{t('account.country', locale)} *</Label>
                     <Select value={form.country} onValueChange={(v) => updateField('country', v)}>
                       <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Seleccionar país" />
+                        <SelectValue placeholder={t('createJob.selectCountry', locale)} />
                       </SelectTrigger>
                       <SelectContent>
                         {COUNTRIES.map((c) => (
@@ -243,10 +244,10 @@ export default function CreateJob() {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="location">Ubicación</Label>
+                    <Label htmlFor="location">{t('createJob.location', locale)}</Label>
                     <Input
                       id="location"
-                      placeholder="Ej: Córdoba, Argentina"
+                      placeholder={t('createJob.locationPlaceholder', locale)}
                       value={form.location}
                       onChange={(e) => updateField('location', e.target.value)}
                       className="mt-1"
@@ -255,7 +256,7 @@ export default function CreateJob() {
                 </div>
 
                 <div>
-                  <Label>Fecha límite para recibir ofertas</Label>
+                  <Label>{t('createJob.deadline', locale)}</Label>
                   <div className="flex items-center gap-2 mt-2">
                     <Checkbox
                       id="no-deadline"
@@ -263,7 +264,7 @@ export default function CreateJob() {
                       onCheckedChange={(checked) => setNoDeadline(checked === true)}
                     />
                     <Label htmlFor="no-deadline" className="font-normal cursor-pointer">
-                      Sin fecha límite (queda abierto hasta que lo cierres tú)
+                      {t('createJob.noDeadline', locale)}
                     </Label>
                   </div>
                   {!noDeadline && (
@@ -280,7 +281,7 @@ export default function CreateJob() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="hectares">Hectáreas</Label>
+                    <Label htmlFor="hectares">{t('createJob.hectares', locale)}</Label>
                     <Input
                       id="hectares"
                       type="number"
@@ -291,7 +292,7 @@ export default function CreateJob() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="budget_min">Presupuesto mín. (USD, opcional)</Label>
+                    <Label htmlFor="budget_min">{t('createJob.budgetMin', locale)}</Label>
                     <Input
                       id="budget_min"
                       type="number"
@@ -302,7 +303,7 @@ export default function CreateJob() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="budget_max">Presupuesto máx. (USD) *</Label>
+                    <Label htmlFor="budget_max">{t('createJob.budgetMax', locale)} *</Label>
                     <Input
                       id="budget_max"
                       type="number"
@@ -319,7 +320,7 @@ export default function CreateJob() {
                   disabled={submitting}
                   className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 cursor-pointer"
                 >
-                  {submitting ? 'Publicando...' : 'Publicar Trabajo'}
+                  {submitting ? t('createJob.publishing', locale) : t('jobs.publish', locale)}
                 </Button>
               </form>
             </CardContent>
