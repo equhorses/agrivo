@@ -708,7 +708,7 @@ export default function Admin() {
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl" style={{ fontFamily: 'Poppins, sans-serif' }}>Panel de Administración</h1>
-              <p className="text-muted-foreground text-sm">Vista general de Agrivo, al minuto</p>
+              <p className="text-muted-foreground text-sm">Vista general de Agrizia, al minuto</p>
             </div>
           </div>
 
@@ -1319,7 +1319,7 @@ export default function Admin() {
           <DialogHeader>
             <DialogTitle>Mensaje a {messageTarget?.label}</DialogTitle>
             <DialogDescription>
-              Le llegará como "Equipo Agrivo" en su bandeja de Mensajes, y le avisa una notificación.
+              Le llegará como "Equipo Agrizia" en su bandeja de Mensajes, y le avisa una notificación.
             </DialogDescription>
           </DialogHeader>
           <Textarea

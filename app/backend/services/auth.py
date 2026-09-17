@@ -94,7 +94,7 @@ class AuthService:
         self.db.add(Notifications(
             user_id=user.id,
             type="welcome",
-            title="¡Bienvenido a Agrivo!",
+            title="¡Bienvenido a Agrizia!",
             body="Explora trabajos disponibles o completa tu perfil para empezar a publicar y ofertar.",
             link="/jobs",
         ))
@@ -128,7 +128,7 @@ class AuthService:
         if user.account_status == "banned":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Esta cuenta ha sido suspendida por el equipo de Agrivo. Contacta con soporte.",
+                detail="Esta cuenta ha sido suspendida por el equipo de Agrizia. Contacta con soporte.",
             )
 
         if user.account_status == "suspended":
@@ -164,7 +164,7 @@ class AuthService:
             if user.account_status == "banned":
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Esta cuenta ha sido suspendida por el equipo de Agrivo. Contacta con soporte.",
+                    detail="Esta cuenta ha sido suspendida por el equipo de Agrizia. Contacta con soporte.",
                 )
             user.last_login = datetime.now(timezone.utc)
             if name and not user.name:
@@ -189,7 +189,7 @@ class AuthService:
             self.db.add(Notifications(
                 user_id=user.id,
                 type="welcome",
-                title="¡Bienvenido a Agrivo!",
+                title="¡Bienvenido a Agrizia!",
                 body="Explora trabajos disponibles o completa tu perfil para empezar a publicar y ofertar.",
                 link="/jobs",
             ))

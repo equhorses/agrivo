@@ -6,29 +6,29 @@ export default function Downloads() {
   const documents = [
     {
       title: "Documentación Técnica (Español)",
-      description: "Documento Word completo con toda la información técnica del sistema Agrivo en español.",
-      filename: "AGRIVO_Documentacion_ES.docx",
+      description: "Documento Word completo con toda la información técnica del sistema Agrizia en español.",
+      filename: "AGRIZIA_Documentacion_ES.docx",
       format: "DOCX",
       size: "46 KB",
     },
     {
       title: "Technical Documentation (English)",
-      description: "Complete Word document with all Agrivo system technical information in English.",
-      filename: "AGRIVO_Documentation_EN.docx",
+      description: "Complete Word document with all Agrizia system technical information in English.",
+      filename: "AGRIZIA_Documentation_EN.docx",
       format: "DOCX",
       size: "43 KB",
     },
     {
       title: "Documentación Markdown (Español)",
       description: "Versión en formato Markdown de la documentación técnica en español.",
-      filename: "AGRIVO_DOCUMENTATION_ES.md",
+      filename: "AGRIZIA_DOCUMENTATION_ES.md",
       format: "MD",
       size: "28 KB",
     },
     {
       title: "Documentation Markdown (English)",
       description: "Markdown version of the technical documentation in English.",
-      filename: "AGRIVO_DOCUMENTATION_EN.md",
+      filename: "AGRIZIA_DOCUMENTATION_EN.md",
       format: "MD",
       size: "27 KB",
     },
@@ -48,7 +48,7 @@ export default function Downloads() {
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-green-900 mb-3">
-            📄 Documentación Técnica Agrivo
+            📄 Documentación Técnica Agrizia
           </h1>
           <p className="text-gray-600 text-lg">
             Descarga la documentación completa para replicar el sistema

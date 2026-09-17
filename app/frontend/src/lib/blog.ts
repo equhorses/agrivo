@@ -193,7 +193,7 @@ function getSiteDomainUrl() {
 function getSiteName() {
   const title = import.meta.env.VITE_APP_TITLE?.trim();
   if (title && title !== 'AgroMejor' && title !== 'shadcnui') return title;
-  return 'Agrivo';
+  return 'Agrizia';
 }
 
 function getTwitterSiteHandle() {

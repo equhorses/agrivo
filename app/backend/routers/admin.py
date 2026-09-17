@@ -456,7 +456,7 @@ async def get_dashboard(
     current_user: UserResponse = Depends(get_staff_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Vista general de Agrivo, al minuto — la pestaña 'Resumen' del panel."""
+    """Vista general de Agrizia, al minuto — la pestaña 'Resumen' del panel."""
     now = datetime.now(timezone.utc)
     seven_days_ago = now - timedelta(days=7)
 
@@ -939,7 +939,7 @@ async def assign_staff_role(
     db: AsyncSession = Depends(get_db),
 ):
     """Da (o quita, con role='user') un rol de staff a una cuenta ya
-    existente — la persona debe haberse registrado antes en Agrivo."""
+    existente — la persona debe haberse registrado antes en Agrizia."""
     if payload.role not in STAFF_ROLES and payload.role != "user":
         raise HTTPException(
             status_code=400,
@@ -1040,7 +1040,7 @@ async def cancel_bid_admin(
         raise HTTPException(status_code=404, detail="Puja no encontrada")
     bid.status = "cancelled"
 
-    # Avisar a quien pujó — viene del equipo de Agrivo, no del dueño del
+    # Avisar a quien pujó — viene del equipo de Agrizia, no del dueño del
     # trabajo, así que es una notificación del sistema, no un mensaje suyo.
     job_result = await db.execute(select(Jobs).where(Jobs.id == bid.job_id))
     job = job_result.scalar_one_or_none()
@@ -1048,7 +1048,7 @@ async def cancel_bid_admin(
         user_id=bid.user_id,
         type="bid_cancelled",
         title=f'Tu oferta para "{job.title if job else "un trabajo"}" fue anulada',
-        body="El equipo de Agrivo ha anulado esta oferta. Si crees que es un error, contáctanos.",
+        body="El equipo de Agrizia ha anulado esta oferta. Si crees que es un error, contáctanos.",
         link=f"/jobs/{bid.job_id}",
     ))
 
@@ -1418,9 +1418,9 @@ async def send_message_admin(
     current_user: UserResponse = Depends(get_staff_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """El equipo de Agrivo escribe primero a un usuario (no moderar una
+    """El equipo de Agrizia escribe primero a un usuario (no moderar una
     conversación ya existente, sino arrancar una). Aparece de cara al
-    usuario como "Equipo Agrivo", y le llega notificación."""
+    usuario como "Equipo Agrizia", y le llega notificación."""
     if not payload.content.strip():
         raise HTTPException(status_code=400, detail="El mensaje no puede estar vacío")
 
@@ -1438,7 +1438,7 @@ async def send_message_admin(
     db.add(Notifications(
         user_id=payload.receiver_id,
         type="admin_message",
-        title="Tienes un mensaje del equipo de Agrivo",
+        title="Tienes un mensaje del equipo de Agrizia",
         body=payload.content.strip()[:120],
         link="/messages",
     ))

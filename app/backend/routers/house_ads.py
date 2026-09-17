@@ -91,7 +91,7 @@ async def book_slot(
     db: AsyncSession = Depends(get_db),
 ):
     """Start a Stripe Checkout for a 30-day house-ad slot. Requires an
-    Agrivo account (any account, not just professionals)."""
+    Agrizia account (any account, not just professionals)."""
     if payload.slot not in KNOWN_SLOTS:
         raise HTTPException(status_code=400, detail="Hueco publicitario no válido.")
 

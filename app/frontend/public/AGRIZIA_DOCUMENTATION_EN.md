@@ -22,7 +22,7 @@
 
 ## 1. GENERAL DESCRIPTION
 
-**Agrivo** is a global marketplace connecting farmers with field professionals. The platform enables:
+**Agrizia** is a global marketplace connecting farmers with field professionals. The platform enables:
 
 - **Post agricultural jobs** with reverse auction or fixed price system
 - **Professional directory** with KYC verification
@@ -768,4 +768,4 @@ app/
 
 *Document generated on July 11, 2026*
 *Version: 1.0*
-*Platform: Agrivo - Global Agricultural Services Marketplace*
+*Platform: Agrizia - Global Agricultural Services Marketplace*

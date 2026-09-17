@@ -36,11 +36,11 @@ async def get_public_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    # El equipo de Agrivo (staff/admin) aparece siempre como "Equipo Agrivo"
+    # El equipo de Agrizia (staff/admin) aparece siempre como "Equipo Agrizia"
     # de cara al público, nunca con su nombre real ni foto personal — y no
     # depende de que hayan rellenado ningún perfil.
     if user.role in STAFF_ROLES:
-        return PublicUserResponse(id=user.id, name="Equipo Agrivo", avatar_url=None)
+        return PublicUserResponse(id=user.id, name="Equipo Agrizia", avatar_url=None)
 
     # Si no ha puesto un nombre, usamos la parte del email antes de la @ como
     # respaldo (igual que ya hace el saludo del header) — nunca el email en sí.
@@ -142,7 +142,7 @@ async def contact_support(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Manda un mensaje directo al equipo de Agrivo (aparece en Mensajes
+    """Manda un mensaje directo al equipo de Agrizia (aparece en Mensajes
     directos del panel de admin) y le avisa a alguien del equipo. Si el
     usuario tiene un plan de pago activo, se marca como prioritario."""
     if not payload.subject.strip() or not payload.message.strip():

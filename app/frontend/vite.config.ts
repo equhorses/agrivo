@@ -16,7 +16,7 @@ function escapeHtmlAttr(str: string): string {
     .replace(/'/g, '&#39;');
 }
 
-process.env.VITE_APP_TITLE ??= process.env.OVERVIEW_TITLE ?? 'Agrivo';
+process.env.VITE_APP_TITLE ??= process.env.OVERVIEW_TITLE ?? 'Agrizia';
 process.env.VITE_APP_DESCRIPTION ??= process.env.OVERVIEW_DESCRIPTION ?? 'El mayor marketplace agrario del mundo. Mejora la gestión agrícola con resultados rápidos y detallados.';
 process.env.VITE_APP_TITLE = escapeHtmlAttr(process.env.VITE_APP_TITLE);
 process.env.VITE_APP_DESCRIPTION = escapeHtmlAttr(process.env.VITE_APP_DESCRIPTION);

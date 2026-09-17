@@ -13,7 +13,7 @@ import { Gift } from 'lucide-react';
 import { t, useLocale } from '@/lib/i18n';
 
 // Clave usada para recordar un token de invitación pendiente entre pasos del
-// login/registro. Agrivo no tiene una puerta de "Coming Soon" (a diferencia
+// login/registro. Agrizia no tiene una puerta de "Coming Soon" (a diferencia
 // de VentaCofrade), así que esto vive aquí en vez de en un componente aparte.
 const INVITE_TOKEN_STORAGE_KEY = 'agrivo_pending_invite_token';
 

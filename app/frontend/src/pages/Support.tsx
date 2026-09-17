@@ -54,7 +54,7 @@ export default function Support() {
         subject: subject.trim(), message: message.trim(),
       }, 'POST');
       setSent({ priority: !!res?.data?.priority });
-      toast.success('Mensaje enviado al equipo de Agrivo');
+      toast.success('Mensaje enviado al equipo de Agrizia');
     } catch (err: any) {
       toast.error(getBackendErrorMessage(err, 'No se pudo enviar la consulta'));
     } finally {

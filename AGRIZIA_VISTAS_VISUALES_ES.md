@@ -1,4 +1,4 @@
-# 📱 Agrivo - Documento Visual de Vistas de la Plataforma
+# 📱 Agrizia - Documento Visual de Vistas de la Plataforma
 
 ## Guía Visual Completa de la Interfaz de Usuario
 
@@ -11,7 +11,7 @@ La página principal presenta el hero con imagen de drone agrícola, estadístic
 ![Landing Page - Hero Section](https://mgx-backend-cdn.metadl.com/generate/images/1410088/2026-07-11/sisztdacaiza/vista-01-landing-hero.png)
 
 ### Elementos principales:
-- **Header**: Logo Agrivo, navegación (Home, Jobs, Professionals, Pricing), selector de idioma, botones Sign In/Sign Up
+- **Header**: Logo Agrizia, navegación (Home, Jobs, Professionals, Pricing), selector de idioma, botones Sign In/Sign Up
 - **Hero Section**: Imagen de drone agrícola, título "Conecta con los mejores profesionales del campo", CTAs principales
 - **Banderas de países**: España, Brasil, Argentina, USA, Portugal, Francia, India, Australia, Ucrania, México
 - **Estadísticas**: 2,400+ profesionales activos, 1,344 trabajos completados, 4 países operativos, 47% satisfacción
@@ -197,4 +197,4 @@ Página pública con toda la información del profesional.
 
 ---
 
-*Documento generado el 11 de julio de 2026 - Plataforma Agrivo v1.0*
+*Documento generado el 11 de julio de 2026 - Plataforma Agrizia v1.0*

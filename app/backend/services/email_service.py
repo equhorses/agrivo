@@ -7,7 +7,7 @@ import httpx
 logger = logging.getLogger(__name__)
 
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
-FROM_EMAIL = "Agrivo <notifications@agrivo.app>"
+FROM_EMAIL = "Agrizia <notifications@agrizia.app>"
 RESEND_URL = "https://api.resend.com/emails"
 
 
@@ -51,7 +51,7 @@ def kyc_approved_email(full_name: str, plan: str) -> tuple[str, str]:
     html = f"""
     <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; padding: 30px 0;">
-            <h1 style="color: #166534; margin: 0;">🌱 Agrivo</h1>
+            <h1 style="color: #166534; margin: 0;">🌱 Agrizia</h1>
             <p style="color: #6b7280; margin-top: 5px;">Marketplace de Servicios Agrícolas</p>
         </div>
         <div style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); border-radius: 16px; padding: 30px; text-align: center;">
@@ -68,12 +68,12 @@ def kyc_approved_email(full_name: str, plan: str) -> tuple[str, str]:
             </p>
         </div>
         <div style="text-align: center; padding: 20px;">
-            <a href="https://agrivo.app/dashboard" style="background: #166534; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+            <a href="https://agrizia.app/dashboard" style="background: #166534; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600;">
                 Ver mi perfil
             </a>
         </div>
         <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 30px;">
-            © 2026 Agrivo. Todos los derechos reservados.
+            © 2026 Agrizia. Todos los derechos reservados.
         </p>
     </div>
     """
@@ -87,7 +87,7 @@ def kyc_rejected_email(full_name: str, reason: str = "") -> tuple[str, str]:
     html = f"""
     <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; padding: 30px 0;">
-            <h1 style="color: #166534; margin: 0;">🌱 Agrivo</h1>
+            <h1 style="color: #166534; margin: 0;">🌱 Agrizia</h1>
             <p style="color: #6b7280; margin-top: 5px;">Marketplace de Servicios Agrícolas</p>
         </div>
         <div style="background: #fef2f2; border-radius: 16px; padding: 30px; text-align: center;">
@@ -101,12 +101,12 @@ def kyc_rejected_email(full_name: str, reason: str = "") -> tuple[str, str]:
             </p>
         </div>
         <div style="text-align: center; padding: 20px;">
-            <a href="https://agrivo.app/kyc" style="background: #166534; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+            <a href="https://agrizia.app/kyc" style="background: #166534; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600;">
                 Reintentar verificación
             </a>
         </div>
         <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 30px;">
-            © 2026 Agrivo. Todos los derechos reservados.
+            © 2026 Agrizia. Todos los derechos reservados.
         </p>
     </div>
     """
@@ -119,7 +119,7 @@ def new_bid_email(job_title: str, bidder_name: str, amount: str) -> tuple[str, s
     html = f"""
     <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; padding: 30px 0;">
-            <h1 style="color: #166534; margin: 0;">🌱 Agrivo</h1>
+            <h1 style="color: #166534; margin: 0;">🌱 Agrizia</h1>
         </div>
         <div style="background: #f0fdf4; border-radius: 16px; padding: 30px;">
             <h2 style="color: #166534; margin-top: 0;">Nueva oferta recibida 💰</h2>
@@ -129,7 +129,7 @@ def new_bid_email(job_title: str, bidder_name: str, amount: str) -> tuple[str, s
             <p style="color: #166534; font-size: 18px; font-weight: bold;">"{job_title}"</p>
         </div>
         <div style="text-align: center; padding: 20px;">
-            <a href="https://agrivo.app/dashboard" style="background: #166534; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+            <a href="https://agrizia.app/dashboard" style="background: #166534; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600;">
                 Ver ofertas
             </a>
         </div>
@@ -140,11 +140,11 @@ def new_bid_email(job_title: str, bidder_name: str, amount: str) -> tuple[str, s
 
 def new_message_email(sender_name: str) -> tuple[str, str]:
     """Generate new message notification email."""
-    subject = f"💬 Nuevo mensaje de {sender_name} en Agrivo"
+    subject = f"💬 Nuevo mensaje de {sender_name} en Agrizia"
     html = f"""
     <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; padding: 30px 0;">
-            <h1 style="color: #166534; margin: 0;">🌱 Agrivo</h1>
+            <h1 style="color: #166534; margin: 0;">🌱 Agrizia</h1>
         </div>
         <div style="background: #f0fdf4; border-radius: 16px; padding: 30px;">
             <h2 style="color: #166534; margin-top: 0;">Nuevo mensaje 💬</h2>
@@ -153,7 +153,7 @@ def new_message_email(sender_name: str) -> tuple[str, str]:
             </p>
         </div>
         <div style="text-align: center; padding: 20px;">
-            <a href="https://agrivo.app/messages" style="background: #166534; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+            <a href="https://agrizia.app/messages" style="background: #166534; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600;">
                 Leer mensaje
             </a>
         </div>

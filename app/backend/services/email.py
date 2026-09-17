@@ -22,7 +22,7 @@ async def send_welcome_email(to_email: str, name: Optional[str] = None) -> bool:
 
     html_content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
-      <h2 style="color: #0A714E;">¡Bienvenido a Agrivo, {display_name}!</h2>
+      <h2 style="color: #0A714E;">¡Bienvenido a Agrizia, {display_name}!</h2>
       <p>Gracias por registrarte en el mayor marketplace agrario del mundo.</p>
       <p>Ya puedes publicar trabajos agrícolas, encontrar profesionales verificados o explorar
       oportunidades cerca de ti.</p>
@@ -40,7 +40,7 @@ async def send_welcome_email(to_email: str, name: Optional[str] = None) -> bool:
     payload = {
         "from": from_email,
         "to": [to_email],
-        "subject": "¡Bienvenido a Agrivo!",
+        "subject": "¡Bienvenido a Agrizia!",
         "html": html_content,
     }
 
@@ -74,7 +74,7 @@ async def send_subscription_confirmation_email(to_email: str, plan: str, name: O
     html_content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
       <h2 style="color: #0A714E;">¡Tu plan {plan_label} ya está activo, {display_name}!</h2>
-      <p>Hemos confirmado tu pago y tu cuenta profesional en Agrivo ya está activada.</p>
+      <p>Hemos confirmado tu pago y tu cuenta profesional en Agrizia ya está activada.</p>
       <p>Ya puedes acceder a todas las ventajas de tu plan y empezar a pujar por trabajos.</p>
       <p style="margin-top: 24px;">
         <a href="https://agrivo.com/dashboard" style="background-color:#0A714E;color:#fff;
@@ -90,7 +90,7 @@ async def send_subscription_confirmation_email(to_email: str, plan: str, name: O
     payload = {
         "from": from_email,
         "to": [to_email],
-        "subject": f"Tu plan {plan_label} está activo - Agrivo",
+        "subject": f"Tu plan {plan_label} está activo - Agrizia",
         "html": html_content,
     }
 
@@ -123,9 +123,9 @@ async def send_invitation_email(to_email: str, months: int, plan: str) -> bool:
 
     html_content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
-      <h2 style="color: #0A714E;">Tienes acceso gratis a Agrivo {plan_label}</h2>
+      <h2 style="color: #0A714E;">Tienes acceso gratis a Agrizia {plan_label}</h2>
       <p>Te hemos regalado <strong>{months} {"mes" if months == 1 else "meses"}</strong> del plan
-      {plan_label} de Agrivo, sin coste alguno.</p>
+      {plan_label} de Agrizia, sin coste alguno.</p>
       <p>Regístrate con este mismo email ({to_email}) para que se active automáticamente.</p>
       <p style="margin-top: 24px;">
         <a href="https://agrivo.com/login?mode=register" style="background-color:#0A714E;color:#fff;
@@ -141,7 +141,7 @@ async def send_invitation_email(to_email: str, months: int, plan: str) -> bool:
     payload = {
         "from": from_email,
         "to": [to_email],
-        "subject": f"Tienes {months} {'mes' if months == 1 else 'meses'} gratis de Agrivo {plan_label}",
+        "subject": f"Tienes {months} {'mes' if months == 1 else 'meses'} gratis de Agrizia {plan_label}",
         "html": html_content,
     }
 

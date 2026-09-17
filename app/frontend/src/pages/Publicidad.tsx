@@ -180,7 +180,7 @@ export default function Publicidad() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-              <Megaphone className="h-7 w-7 text-primary" /> Anúnciate en Agrivo
+              <Megaphone className="h-7 w-7 text-primary" /> Anúnciate en Agrizia
             </h1>
             <p className="text-muted-foreground">
               Reserva un hueco publicitario destacado en la web durante 30 días. El pago se procesa al

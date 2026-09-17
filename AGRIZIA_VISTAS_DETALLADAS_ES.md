@@ -34,7 +34,7 @@ Barra de navegación fija (sticky) en la parte superior de todas las páginas. S
 ### Layout
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│ [Logo Agrivo]  │  Inicio  Trabajos  Profesionales  Precios  │ 🇪🇸 ES ▼ │ [Login] [Registrarse] │
+│ [Logo Agrizia]  │  Inicio  Trabajos  Profesionales  Precios  │ 🇪🇸 ES ▼ │ [Login] [Registrarse] │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -42,7 +42,7 @@ Barra de navegación fija (sticky) en la parte superior de todas las páginas. S
 
 | Elemento | Componente | Descripción |
 |----------|-----------|-------------|
-| Logo | `<img>` + `<span>` | Logo 36x36px con nombre "Agrivo" en Poppins bold |
+| Logo | `<img>` + `<span>` | Logo 36x36px con nombre "Agrizia" en Poppins bold |
 | Navegación | `<Link>` | 4 enlaces: Inicio, Trabajos, Profesionales, Precios |
 | Selector idioma | `DropdownMenu` | Banderas con código (ES, EN, PT, FR) |
 | Login | `Button ghost` | Texto "Iniciar Sesión" |
@@ -82,13 +82,13 @@ Pie de página con información de la empresa, enlaces rápidos, categorías y d
 ### Layout
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│ [Logo Agrivo]          │ Enlaces Rápidos    │ Categorías        │ Legal           │
+│ [Logo Agrizia]          │ Enlaces Rápidos    │ Categorías        │ Legal           │
 │ Descripción corta      │ • Trabajos         │ • Drones          │ • Privacidad    │
 │                        │ • Profesionales    │ • Cosecha         │ • Términos      │
 │ Banderas países        │ • Precios          │ • Poda            │ • Cookies       │
 │                        │ • Dashboard        │ • Riego           │                 │
 ├─────────────────────────────────────────────────────────────────────┤
-│ © 2026 Agrivo. Todos los derechos reservados.                       │
+│ © 2026 Agrizia. Todos los derechos reservados.                       │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -153,7 +153,7 @@ Pie de página con información de la empresa, enlaces rápidos, categorías y d
 #### 3.3 Cómo Funciona
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│              ¿Cómo funciona Agrivo?                                  │
+│              ¿Cómo funciona Agrizia?                                  │
 │                                                                      │
 │ ┌──────────────┐  ┌──────────────┐  ┌──────────────┐               │
 │ │ [🌐]         │  │ [🛡️]         │  │ [⚡]         │               │
@@ -1178,4 +1178,4 @@ Pie de página con información de la empresa, enlaces rápidos, categorías y d
 
 *Documento generado el 11 de julio de 2026*
 *Versión: 1.0*
-*Plataforma: Agrivo - Marketplace Global de Servicios Agrícolas*
+*Plataforma: Agrizia - Marketplace Global de Servicios Agrícolas*
