@@ -108,7 +108,7 @@ export default function Support() {
                   </Button>
                   <p className="text-xs text-muted-foreground text-center">
                     {t('support.alsoWriteTo', locale)}{' '}
-                    <a href="mailto:soporte@agrivo.com" className="text-emerald-700 hover:underline">soporte@agrivo.com</a>
+                    <a href="mailto:soporte@agrizia.com" className="text-emerald-700 hover:underline">soporte@agrizia.com</a>
                   </p>
                 </>
               )}

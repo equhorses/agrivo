@@ -10,8 +10,18 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Megaphone, Upload, Loader2, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { t, useLocale } from '@/lib/i18n';
 
 const client = createClient();
+
+const STATUS_CLASS: Record<string, string> = {
+  pending_payment: 'bg-muted text-muted-foreground',
+  pending_approval: 'bg-amber-100 text-amber-700',
+  queued: 'bg-blue-100 text-blue-700',
+  active: 'bg-green-100 text-green-700',
+  rejected: 'bg-red-100 text-red-700',
+  expired: 'bg-muted text-muted-foreground',
+};
 
 interface AdSlotAvailability {
   slot: string;
@@ -33,22 +43,8 @@ interface MyAdBooking {
   rejected_reason: string | null;
 }
 
-const SLOT_LABELS: Record<string, string> = {
-  home_top: 'Portada (debajo de la cabecera)',
-  jobs_top: 'Trabajos (encima del listado)',
-  pros_top: 'Profesionales (encima del listado)',
-};
-
-const STATUS_LABELS: Record<string, { label: string; className: string }> = {
-  pending_payment: { label: 'Pago pendiente', className: 'bg-muted text-muted-foreground' },
-  pending_approval: { label: 'En revisión', className: 'bg-amber-100 text-amber-700' },
-  queued: { label: 'En cola, esperando hueco', className: 'bg-blue-100 text-blue-700' },
-  active: { label: 'Publicado', className: 'bg-green-100 text-green-700' },
-  rejected: { label: 'Rechazado', className: 'bg-red-100 text-red-700' },
-  expired: { label: 'Finalizado', className: 'bg-muted text-muted-foreground' },
-};
-
 export default function Publicidad() {
+  const [locale] = useLocale();
   const [searchParams, setSearchParams] = useSearchParams();
   const [user, setUser] = useState<unknown>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -165,7 +161,7 @@ export default function Publicidad() {
       console.error('Error booking ad slot:', err);
       const message =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        'No se pudo iniciar el pago.';
+        t('ads.couldNotStartPayment', locale);
       toast.error(message);
       setSubmitting(false);
     }
@@ -180,16 +176,15 @@ export default function Publicidad() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-              <Megaphone className="h-7 w-7 text-primary" /> Anúnciate en Agrizia
+              <Megaphone className="h-7 w-7 text-primary" /> {t('ads.title', locale)}
             </h1>
             <p className="text-muted-foreground">
-              Reserva un hueco publicitario destacado en la web durante 30 días. El pago se procesa al
-              momento, y tu anuncio se publica en cuanto lo revisemos (normalmente en menos de 24-48h).
+              {t('ads.subtitle', locale)}
             </p>
           </div>
 
           {loadingSlots ? (
-            <p className="text-sm text-muted-foreground">Cargando huecos disponibles...</p>
+            <p className="text-sm text-muted-foreground">{t('ads.loadingSlots', locale)}</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
               {slots.map((slot) => {
@@ -204,23 +199,22 @@ export default function Publicidad() {
                     onClick={() => slot.self_service_enabled && setSelectedSlot(slot.slot)}
                   >
                     <CardHeader>
-                      <CardTitle className="text-base">{SLOT_LABELS[slot.slot] || slot.slot}</CardTitle>
-                      <CardDescription>{(slot.price_cents / 100).toFixed(2)} € / 30 días</CardDescription>
+                      <CardTitle className="text-base">{t(`ads.slot.${slot.slot}`, locale)}</CardTitle>
+                      <CardDescription>{(slot.price_cents / 100).toFixed(2)} € {t('ads.perDays', locale)}</CardDescription>
                     </CardHeader>
                     <CardContent>
                       {!slot.self_service_enabled ? (
-                        <Badge className="bg-muted text-muted-foreground">No disponible</Badge>
+                        <Badge className="bg-muted text-muted-foreground">{t('ads.notAvailable', locale)}</Badge>
                       ) : isFree ? (
-                        <Badge className="bg-green-100 text-green-700">Libre ahora</Badge>
+                        <Badge className="bg-green-100 text-green-700">{t('ads.freeNow', locale)}</Badge>
                       ) : (
                         <div className="space-y-1">
                           <Badge className="bg-amber-100 text-amber-700">
-                            Ocupado hasta {new Date(slot.occupied_until as string).toLocaleDateString('es-ES')}
+                            {t('ads.occupiedUntil', locale)} {new Date(slot.occupied_until as string).toLocaleDateString('es-ES')}
                           </Badge>
                           {slot.queue_length > 0 && (
                             <p className="text-xs text-muted-foreground">
-                              {slot.queue_length} anunciante(s) ya en cola — puedes reservar igualmente y
-                              esperar tu turno.
+                              {slot.queue_length} {t('ads.queueNote', locale)}
                             </p>
                           )}
                         </div>
@@ -236,43 +230,43 @@ export default function Publicidad() {
             <Card className="mb-10">
               <CardHeader>
                 <CardTitle className="text-lg">
-                  Reservar: {SLOT_LABELS[selectedSlot] || selectedSlot} — {selectedSlotInfo
+                  {t('ads.reserve', locale)}: {t(`ads.slot.${selectedSlot}`, locale)} — {selectedSlotInfo
                     ? (selectedSlotInfo.price_cents / 100).toFixed(2)
                     : '…'}{' '}
                   €
                 </CardTitle>
                 <CardDescription>
                   {selectedSlotInfo && !selectedSlotInfo.occupied_until
-                    ? 'Se publicará en cuanto lo aprobemos.'
-                    : 'El hueco está ocupado ahora mismo: tu anuncio quedará en cola y se publicará automáticamente en cuanto se libere, sin que tengas que hacer nada más.'}
+                    ? t('ads.willPublishSoon', locale)
+                    : t('ads.queueExplain', locale)}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="advertiser_name">Nombre de tu negocio</Label>
+                  <Label htmlFor="advertiser_name">{t('ads.businessName', locale)}</Label>
                   <Input
                     id="advertiser_name"
                     value={advertiserName}
                     onChange={(e) => setAdvertiserName(e.target.value)}
-                    placeholder="Ej: Suministros Agrícolas del Sur"
+                    placeholder={t('ads.businessNamePlaceholder', locale)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="title">Título del anuncio</Label>
+                  <Label htmlFor="title">{t('ads.adTitle', locale)}</Label>
                   <Input
                     id="title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Ej: Maquinaria agrícola — presupuesto sin compromiso"
+                    placeholder={t('ads.adTitlePlaceholder', locale)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Imagen del banner</Label>
+                  <Label>{t('ads.bannerImage', locale)}</Label>
                   <p className="text-xs text-muted-foreground mb-1">
-                    Tamaño recomendado: 1200 × 300 px (horizontal), JPG o PNG, máx. 2 MB.
+                    {t('ads.recommendedSize', locale)}
                   </p>
                   {imageUrl && (
-                    <img src={imageUrl} alt="Vista previa" className="w-full max-h-32 object-cover rounded-md mb-2" />
+                    <img src={imageUrl} alt={t('ads.preview', locale)} className="w-full max-h-32 object-cover rounded-md mb-2" />
                   )}
                   <input
                     ref={fileInputRef}
@@ -288,11 +282,11 @@ export default function Publicidad() {
                     disabled={uploading}
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <Upload className="h-3.5 w-3.5 mr-1" /> {uploading ? 'Subiendo...' : 'Subir imagen'}
+                    <Upload className="h-3.5 w-3.5 mr-1" /> {uploading ? t('ads.uploading', locale) : t('ads.uploadImage', locale)}
                   </Button>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="link_url">Enlace al hacer clic</Label>
+                  <Label htmlFor="link_url">{t('ads.clickLink', locale)}</Label>
                   <Input
                     id="link_url"
                     value={linkUrl}
@@ -302,22 +296,22 @@ export default function Publicidad() {
                 </div>
 
                 {authLoading ? (
-                  <p className="text-sm text-muted-foreground">Comprobando tu sesión...</p>
+                  <p className="text-sm text-muted-foreground">{t('ads.checkingSession', locale)}</p>
                 ) : !user ? (
                   <Button className="w-full" onClick={() => client.auth.toLogin()}>
-                    Inicia sesión para continuar
+                    {t('ads.loginToContinue', locale)}
                   </Button>
                 ) : (
                   <Button className="w-full" disabled={submitting || uploading} onClick={handleSubmit}>
                     {submitting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : null}
-                    Pagar y reservar hueco
+                    {t('ads.payAndReserve', locale)}
                   </Button>
                 )}
 
                 <p className="text-xs text-muted-foreground text-center">
-                  ¿Algún problema con tu reserva o el pago?{' '}
-                  <a href="mailto:soporte@agrivo.com" className="text-emerald-700 hover:underline">
-                    Escríbenos a soporte@agrivo.com
+                  {t('ads.anyProblem', locale)}{' '}
+                  <a href="mailto:soporte@agrizia.com" className="text-emerald-700 hover:underline">
+                    {t('ads.writeToSupport', locale)} soporte@agrizia.com
                   </a>
                 </p>
               </CardContent>
@@ -326,17 +320,17 @@ export default function Publicidad() {
 
           {user && myBookings.length > 0 && (
             <div>
-              <h2 className="text-lg font-semibold mb-3">Tus reservas</h2>
+              <h2 className="text-lg font-semibold mb-3">{t('ads.yourReservations', locale)}</h2>
               <div className="space-y-2">
                 {myBookings.map((b) => {
-                  const statusInfo = STATUS_LABELS[b.status] || { label: b.status, className: 'bg-muted' };
+                  const statusClass = STATUS_CLASS[b.status] || 'bg-muted';
                   return (
                     <Card key={b.id}>
                       <CardContent className="p-4 flex items-center justify-between gap-4">
                         <div>
                           <div className="font-medium">{b.title}</div>
                           <div className="text-xs text-muted-foreground">
-                            {SLOT_LABELS[b.slot] || b.slot} · {(b.amount_cents / 100).toFixed(2)} €
+                            {t(`ads.slot.${b.slot}`, locale)} · {(b.amount_cents / 100).toFixed(2)} €
                           </div>
                           {b.status === 'rejected' && b.rejected_reason && (
                             <div className="text-xs text-red-600 mt-1 flex items-center gap-1">
@@ -345,17 +339,17 @@ export default function Publicidad() {
                           )}
                           {b.status === 'active' && b.ends_at && (
                             <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3" /> Publicado hasta{' '}
+                              <CheckCircle2 className="h-3 w-3" /> {t('ads.publishedUntil', locale)}{' '}
                               {new Date(b.ends_at).toLocaleDateString('es-ES')}
                             </div>
                           )}
                           {b.status === 'queued' && (
                             <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                              <Clock className="h-3 w-3" /> Esperando a que se libere el hueco
+                              <Clock className="h-3 w-3" /> {t('ads.waitingForSlot', locale)}
                             </div>
                           )}
                         </div>
-                        <Badge className={statusInfo.className}>{statusInfo.label}</Badge>
+                        <Badge className={statusClass}>{t(`ads.status.${b.status}`, locale)}</Badge>
                       </CardContent>
                     </Card>
                   );

@@ -27,12 +27,12 @@ async def send_welcome_email(to_email: str, name: Optional[str] = None) -> bool:
       <p>Ya puedes publicar trabajos agrícolas, encontrar profesionales verificados o explorar
       oportunidades cerca de ti.</p>
       <p style="margin-top: 24px;">
-        <a href="https://agrivo.com/jobs/new" style="background-color:#0A714E;color:#fff;
+        <a href="https://agrivo-two.vercel.app/jobs/new" style="background-color:#0A714E;color:#fff;
         padding:10px 20px;border-radius:6px;text-decoration:none;">Publicar un trabajo</a>
       </p>
       <p style="margin-top: 24px; color: #666; font-size: 13px;">
         Si tienes cualquier duda, escríbenos a
-        <a href="mailto:soporte@agrivo.com">soporte@agrivo.com</a>.
+        <a href="mailto:soporte@agrizia.com">soporte@agrizia.com</a>.
       </p>
     </div>
     """
@@ -77,12 +77,12 @@ async def send_subscription_confirmation_email(to_email: str, plan: str, name: O
       <p>Hemos confirmado tu pago y tu cuenta profesional en Agrizia ya está activada.</p>
       <p>Ya puedes acceder a todas las ventajas de tu plan y empezar a pujar por trabajos.</p>
       <p style="margin-top: 24px;">
-        <a href="https://agrivo.com/dashboard" style="background-color:#0A714E;color:#fff;
+        <a href="https://agrivo-two.vercel.app/dashboard" style="background-color:#0A714E;color:#fff;
         padding:10px 20px;border-radius:6px;text-decoration:none;">Ver mi suscripción</a>
       </p>
       <p style="margin-top: 24px; color: #666; font-size: 13px;">
         Si tienes cualquier duda, escríbenos a
-        <a href="mailto:soporte@agrivo.com">soporte@agrivo.com</a>.
+        <a href="mailto:soporte@agrizia.com">soporte@agrizia.com</a>.
       </p>
     </div>
     """
@@ -128,12 +128,12 @@ async def send_invitation_email(to_email: str, months: int, plan: str) -> bool:
       {plan_label} de Agrizia, sin coste alguno.</p>
       <p>Regístrate con este mismo email ({to_email}) para que se active automáticamente.</p>
       <p style="margin-top: 24px;">
-        <a href="https://agrivo.com/login?mode=register" style="background-color:#0A714E;color:#fff;
+        <a href="https://agrivo-two.vercel.app/login?mode=register" style="background-color:#0A714E;color:#fff;
         padding:10px 20px;border-radius:6px;text-decoration:none;">Crear mi cuenta</a>
       </p>
       <p style="margin-top: 24px; color: #666; font-size: 13px;">
         Si tienes cualquier duda, escríbenos a
-        <a href="mailto:soporte@agrivo.com">soporte@agrivo.com</a>.
+        <a href="mailto:soporte@agrizia.com">soporte@agrizia.com</a>.
       </p>
     </div>
     """

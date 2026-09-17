@@ -159,7 +159,7 @@ async def contact_support(
     )
     staff_user = staff_result.scalar_one_or_none()
     if not staff_user:
-        raise HTTPException(status_code=503, detail="No hay nadie del equipo disponible ahora mismo, escribe a soporte@agrivo.com")
+        raise HTTPException(status_code=503, detail="No hay nadie del equipo disponible ahora mismo, escribe a soporte@agrizia.com")
 
     prefix = "[PRIORITARIO] " if is_priority else ""
     db.add(Messages(
