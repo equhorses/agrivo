@@ -232,7 +232,7 @@ export default function JobDetail() {
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 container py-10 text-center">
-          <h2>Trabajo no encontrado</h2>
+          <h2>{t('jobDetail.notFound', locale)}</h2>
           <Button onClick={() => navigate('/jobs')} className="mt-4 cursor-pointer">
             {t('createJob.backToJobs', locale)}
           </Button>

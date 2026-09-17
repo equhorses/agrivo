@@ -321,7 +321,7 @@ export default function Account() {
                             <p className="font-medium">{job.title}</p>
                             <p className="text-xs text-muted-foreground">{job.category}</p>
                           </div>
-                          <Badge variant="outline">{job.status === 'open' ? 'Abierto' : job.status === 'expired' ? 'Expirado' : 'En Progreso'}</Badge>
+                          <Badge variant="outline">{job.status === 'open' ? t('status.open', locale) : job.status === 'expired' ? t('status.expired', locale) : t('status.inProgress', locale)}</Badge>
                         </div>
                       ))}
                     </div>

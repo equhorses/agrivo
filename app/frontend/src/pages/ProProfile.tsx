@@ -117,8 +117,8 @@ export default function ProProfile() {
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 container py-10 text-center">
-          <h2>Profesional no encontrado</h2>
-          <Button onClick={() => navigate('/pros')} className="mt-4 cursor-pointer">Volver</Button>
+          <h2>{t('proProfile.notFound', locale)}</h2>
+          <Button onClick={() => navigate('/pros')} className="mt-4 cursor-pointer">{t('common.back', locale)}</Button>
         </main>
         <Footer />
       </div>

@@ -135,8 +135,8 @@ export default function Jobs() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('jobs.allTypes', locale)}</SelectItem>
-                  <SelectItem value="reverse_auction">Subasta Inversa</SelectItem>
-                  <SelectItem value="fixed_price">Precio Fijo</SelectItem>
+                  <SelectItem value="reverse_auction">{t('createJob.reverseAuction', locale)}</SelectItem>
+                  <SelectItem value="fixed_price">{t('createJob.fixedPrice', locale)}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -177,7 +177,7 @@ export default function Jobs() {
                                 {job.contract_type === 'reverse_auction' ? 'Subasta' : 'Fijo'}
                               </Badge>
                               <Badge className={`text-xs ml-auto ${job.status === 'open' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100' : 'bg-amber-100 text-amber-800 hover:bg-amber-100'}`}>
-                                {job.status === 'open' ? 'Abierto' : 'En Progreso'}
+                                {job.status === 'open' ? t('status.open', locale) : t('status.inProgress', locale)}
                               </Badge>
                             </div>
                             <h4 className="font-semibold text-base mb-2 line-clamp-1" style={{ fontFamily: 'Poppins, sans-serif' }}>

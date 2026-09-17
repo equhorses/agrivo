@@ -259,10 +259,10 @@ export default function Index() {
           <div className="flex items-end justify-between mb-10">
             <div>
               <Badge variant="outline" className="mb-3 text-emerald-700 border-emerald-200 bg-emerald-50">
-                Oportunidades
+                {t('index.jobsBadge', locale)}
               </Badge>
-              <h2>Últimos trabajos publicados</h2>
-              <p className="text-muted-foreground mt-2">Oportunidades recientes para profesionales del campo</p>
+              <h2>{t('index.jobsTitle', locale)}</h2>
+              <p className="text-muted-foreground mt-2">{t('index.jobsSubtitle', locale)}</p>
             </div>
             <Button variant="ghost" onClick={() => navigate('/jobs')} className="hidden md:flex cursor-pointer text-emerald-700">
               {t('viewAll', locale)} <ArrowRight className="ml-1 h-4 w-4" />
@@ -283,7 +283,7 @@ export default function Index() {
                           {job.category}
                         </Badge>
                         <Badge className={`text-xs ml-auto ${job.status === 'open' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100' : 'bg-amber-100 text-amber-800 hover:bg-amber-100'}`}>
-                          {job.status === 'open' ? 'Abierto' : 'En Progreso'}
+                          {job.status === 'open' ? t('status.open', locale) : t('status.inProgress', locale)}
                         </Badge>
                       </div>
                       <h4 className="font-semibold text-base mb-2 line-clamp-1" style={{ fontFamily: 'Poppins, sans-serif' }}>{job.title}</h4>
@@ -312,10 +312,10 @@ export default function Index() {
           <div className="flex items-end justify-between mb-10">
             <div>
               <Badge variant="outline" className="mb-3 text-emerald-700 border-emerald-200 bg-emerald-50">
-                Expertos
+                {t('index.prosBadge', locale)}
               </Badge>
-              <h2>Profesionales destacados</h2>
-              <p className="text-muted-foreground mt-2">Los expertos mejor valorados de la plataforma</p>
+              <h2>{t('index.prosTitle', locale)}</h2>
+              <p className="text-muted-foreground mt-2">{t('index.prosSubtitle', locale)}</p>
             </div>
             <Button variant="ghost" onClick={() => navigate('/pros')} className="hidden md:flex cursor-pointer text-emerald-700">
               {t('viewAll', locale)} <ArrowRight className="ml-1 h-4 w-4" />

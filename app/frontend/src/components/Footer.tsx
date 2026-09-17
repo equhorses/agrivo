@@ -19,7 +19,7 @@ export default function Footer() {
               <span className="font-bold text-lg text-white" style={{ fontFamily: 'Poppins, sans-serif' }}>{BRAND.name}</span>
             </div>
             <p className="text-sm text-slate-400 leading-relaxed">
-              {BRAND.description}. {t('footer.techForField', locale)}
+              {t('footer.weConnect', locale)} {t('footer.techForField', locale)}
             </p>
             <div className="flex flex-wrap gap-2">
               {COUNTRIES.slice(0, 6).map((c) => (
