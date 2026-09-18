@@ -12,7 +12,7 @@ import { Star, MapPin, ArrowRight, Shield, Globe, Zap, MessageSquare } from 'luc
 import { PlanBadge } from '@/components/Badges';
 import { BRAND, COUNTRIES, CATEGORIES, SEED_PROFESSIONALS, SEED_JOBS } from '@/lib/constants';
 import { formatAmount, formatBudgetRange, useMyCurrency } from '@/lib/currency';
-import { t, useLocale } from '@/lib/i18n';
+import { t, translateCategory, useLocale } from '@/lib/i18n';
 import { toast } from 'sonner';
 
 const client = createClient();
@@ -246,7 +246,7 @@ export default function Index() {
                 className="group flex flex-col items-center p-5 rounded-xl bg-slate-50 border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/50 hover:shadow-md transition-all cursor-pointer"
               >
                 <span className="text-3xl mb-3 group-hover:scale-110 transition-transform">{cat.icon}</span>
-                <span className="text-sm font-medium text-center leading-tight">{cat.name}</span>
+                <span className="text-sm font-medium text-center leading-tight">{translateCategory(cat.name, locale)}</span>
               </Link>
             ))}
           </div>
@@ -280,7 +280,7 @@ export default function Index() {
                         {country && <img src={country.flag} alt={country.name} className="h-4 w-auto rounded-sm" />}
                         {isSeed && <Badge variant="secondary" className="text-xs">Ejemplo</Badge>}
                         <Badge variant="outline" className="text-xs">
-                          {job.category}
+                          {translateCategory(job.category, locale)}
                         </Badge>
                         <Badge className={`text-xs ml-auto ${job.status === 'open' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100' : 'bg-amber-100 text-amber-800 hover:bg-amber-100'}`}>
                           {job.status === 'open' ? t('status.open', locale) : t('status.inProgress', locale)}

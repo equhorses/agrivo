@@ -12,7 +12,7 @@ import { Star, Briefcase, Search, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PlanBadge } from '@/components/Badges';
 import { COUNTRIES, CATEGORIES, SEED_PROFESSIONALS } from '@/lib/constants';
-import { t, useLocale } from '@/lib/i18n';
+import { t, translateCategory, useLocale } from '@/lib/i18n';
 import { toast } from 'sonner';
 
 const client = createClient();
@@ -137,7 +137,7 @@ export default function Professionals() {
                 <SelectContent>
                   <SelectItem value="all">{t('pros.allSpecialties', locale)}</SelectItem>
                   {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.name}>{cat.icon} {cat.name}</SelectItem>
+                    <SelectItem key={cat.id} value={cat.name}>{cat.icon} {translateCategory(cat.name, locale)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -204,7 +204,7 @@ export default function Professionals() {
                               <span>{pro.country}</span>
                               <span className="text-slate-300">·</span>
                               <Briefcase className="h-3 w-3" />
-                              <span>{pro.specialty}</span>
+                              <span>{translateCategory(pro.specialty, locale)}</span>
                             </div>
                           </div>
 

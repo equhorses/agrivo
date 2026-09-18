@@ -14,7 +14,7 @@ import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { COUNTRIES, CATEGORIES } from '@/lib/constants';
 import { getBackendErrorMessage } from '@/lib/errors';
-import { t, useLocale } from '@/lib/i18n';
+import { t, translateCategory, useLocale } from '@/lib/i18n';
 
 const client = createClient();
 
@@ -210,7 +210,7 @@ export default function CreateJob() {
                       </SelectTrigger>
                       <SelectContent>
                         {CATEGORIES.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.name}>{cat.icon} {cat.name}</SelectItem>
+                          <SelectItem key={cat.id} value={cat.name}>{cat.icon} {translateCategory(cat.name, locale)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

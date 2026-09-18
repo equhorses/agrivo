@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Briefcase, DollarSign, MessageSquare, TrendingUp } from 'lucide-react';
 import { formatAmount, formatBudgetRange, useMyCurrency } from '@/lib/currency';
-import { t, useLocale } from '@/lib/i18n';
+import { t, translateCategory, useLocale } from '@/lib/i18n';
 
 const client = createClient();
 
@@ -181,7 +181,7 @@ export default function Dashboard() {
                               </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground">
-                              {job.category} · {job.location} · {formatBudgetRange(job.budget_min, job.budget_max, myCurrency)}
+                              {translateCategory(job.category, locale)} · {job.location} · {formatBudgetRange(job.budget_min, job.budget_max, myCurrency)}
                             </p>
                           </div>
                           <span className="text-sm text-muted-foreground shrink-0">

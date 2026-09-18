@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { CATEGORIES } from './constants';
 
 export type Locale = 'es' | 'en' | 'pt' | 'fr';
 
@@ -354,6 +355,30 @@ const translations: Record<Locale, Record<string, string>> = {
     'jobDetail.notFound': 'Trabajo no encontrado',
     'proProfile.notFound': 'Profesional no encontrado',
     'common.back': 'Volver',
+    'category.drones.name': 'Drones Agrícolas',
+    'category.drones.description': 'Fumigación, mapeo y monitoreo con drones',
+    'category.cosecha.name': 'Cosecha',
+    'category.cosecha.description': 'Servicios de recolección y cosecha mecanizada',
+    'category.poda.name': 'Poda',
+    'category.poda.description': 'Poda de árboles frutales y viñedos',
+    'category.arado.name': 'Arado',
+    'category.arado.description': 'Preparación y labranza del suelo',
+    'category.siembra.name': 'Siembra',
+    'category.siembra.description': 'Siembra directa y convencional',
+    'category.riego.name': 'Riego',
+    'category.riego.description': 'Instalación y mantenimiento de sistemas de riego',
+    'category.fumigacion.name': 'Fumigación',
+    'category.fumigacion.description': 'Aplicación terrestre de fitosanitarios',
+    'category.analisis.name': 'Análisis de Suelo',
+    'category.analisis.description': 'Estudios y análisis de fertilidad',
+    'category.topografia.name': 'Topografía',
+    'category.topografia.description': 'Relevamiento y nivelación de terrenos',
+    'category.ganaderia.name': 'Ganadería',
+    'category.ganaderia.description': 'Servicios veterinarios y manejo de ganado',
+    'category.consultoria.name': 'Consultoría',
+    'category.consultoria.description': 'Asesoramiento agronómico profesional',
+    'category.transporte.name': 'Transporte',
+    'category.transporte.description': 'Logística y transporte de granos',
   },
   en: {
     'nav.home': 'Home',
@@ -706,6 +731,30 @@ const translations: Record<Locale, Record<string, string>> = {
     'jobDetail.notFound': 'Job not found',
     'proProfile.notFound': 'Professional not found',
     'common.back': 'Back',
+    'category.drones.name': 'Agricultural Drones',
+    'category.drones.description': 'Spraying, mapping and monitoring with drones',
+    'category.cosecha.name': 'Harvest',
+    'category.cosecha.description': 'Mechanized harvesting and collection services',
+    'category.poda.name': 'Pruning',
+    'category.poda.description': 'Pruning of fruit trees and vineyards',
+    'category.arado.name': 'Plowing',
+    'category.arado.description': 'Soil preparation and tillage',
+    'category.siembra.name': 'Sowing',
+    'category.siembra.description': 'Direct and conventional sowing',
+    'category.riego.name': 'Irrigation',
+    'category.riego.description': 'Installation and maintenance of irrigation systems',
+    'category.fumigacion.name': 'Spraying',
+    'category.fumigacion.description': 'Ground application of pesticides',
+    'category.analisis.name': 'Soil Analysis',
+    'category.analisis.description': 'Fertility studies and analysis',
+    'category.topografia.name': 'Surveying',
+    'category.topografia.description': 'Land surveying and leveling',
+    'category.ganaderia.name': 'Livestock',
+    'category.ganaderia.description': 'Veterinary services and livestock management',
+    'category.consultoria.name': 'Consulting',
+    'category.consultoria.description': 'Professional agronomic advice',
+    'category.transporte.name': 'Transport',
+    'category.transporte.description': 'Grain logistics and transport',
   },
   pt: {
     'nav.home': 'Início',
@@ -1058,6 +1107,30 @@ const translations: Record<Locale, Record<string, string>> = {
     'jobDetail.notFound': 'Trabalho não encontrado',
     'proProfile.notFound': 'Profissional não encontrado',
     'common.back': 'Voltar',
+    'category.drones.name': 'Drones Agrícolas',
+    'category.drones.description': 'Pulverização, mapeamento e monitoramento com drones',
+    'category.cosecha.name': 'Colheita',
+    'category.cosecha.description': 'Serviços de colheita mecanizada',
+    'category.poda.name': 'Poda',
+    'category.poda.description': 'Poda de árvores frutíferas e vinhedos',
+    'category.arado.name': 'Aração',
+    'category.arado.description': 'Preparação e cultivo do solo',
+    'category.siembra.name': 'Semeadura',
+    'category.siembra.description': 'Semeadura direta e convencional',
+    'category.riego.name': 'Irrigação',
+    'category.riego.description': 'Instalação e manutenção de sistemas de irrigação',
+    'category.fumigacion.name': 'Pulverização',
+    'category.fumigacion.description': 'Aplicação terrestre de fitossanitários',
+    'category.analisis.name': 'Análise de Solo',
+    'category.analisis.description': 'Estudos e análises de fertilidade',
+    'category.topografia.name': 'Topografia',
+    'category.topografia.description': 'Levantamento e nivelamento de terrenos',
+    'category.ganaderia.name': 'Pecuária',
+    'category.ganaderia.description': 'Serviços veterinários e manejo de gado',
+    'category.consultoria.name': 'Consultoria',
+    'category.consultoria.description': 'Consultoria agronômica profissional',
+    'category.transporte.name': 'Transporte',
+    'category.transporte.description': 'Logística e transporte de grãos',
   },
   fr: {
     'nav.home': 'Accueil',
@@ -1410,6 +1483,30 @@ const translations: Record<Locale, Record<string, string>> = {
     'jobDetail.notFound': 'Travail introuvable',
     'proProfile.notFound': 'Professionnel introuvable',
     'common.back': 'Retour',
+    'category.drones.name': 'Drones Agricoles',
+    'category.drones.description': 'Pulvérisation, cartographie et surveillance par drones',
+    'category.cosecha.name': 'Récolte',
+    'category.cosecha.description': 'Services de récolte mécanisée',
+    'category.poda.name': 'Taille',
+    'category.poda.description': "Taille d'arbres fruitiers et de vignes",
+    'category.arado.name': 'Labour',
+    'category.arado.description': 'Préparation et labour du sol',
+    'category.siembra.name': 'Semis',
+    'category.siembra.description': 'Semis direct et conventionnel',
+    'category.riego.name': 'Irrigation',
+    'category.riego.description': "Installation et entretien de systèmes d'irrigation",
+    'category.fumigacion.name': 'Pulvérisation',
+    'category.fumigacion.description': 'Application terrestre de produits phytosanitaires',
+    'category.analisis.name': 'Analyse de Sol',
+    'category.analisis.description': 'Études et analyses de fertilité',
+    'category.topografia.name': 'Topographie',
+    'category.topografia.description': 'Relevé et nivellement des terrains',
+    'category.ganaderia.name': 'Élevage',
+    'category.ganaderia.description': 'Services vétérinaires et gestion du bétail',
+    'category.consultoria.name': 'Conseil',
+    'category.consultoria.description': 'Conseil agronomique professionnel',
+    'category.transporte.name': 'Transport',
+    'category.transporte.description': 'Logistique et transport de céréales',
   },
 };
 
@@ -1431,6 +1528,17 @@ export function setLocale(locale: Locale) {
 export function t(key: string, locale?: Locale): string {
   const l = locale || getLocale();
   return translations[l]?.[key] || translations['es']?.[key] || key;
+}
+
+/** Traduce el nombre de una categoría (de las 12 fijas) por su nombre en
+ * español tal como se guardó al crear el trabajo — si no coincide con
+ * ninguna (texto libre de un trabajo antiguo, por ejemplo), se muestra tal
+ * cual, igual que pasa con los títulos y descripciones de los trabajos. */
+export function translateCategory(categoryName: string | null | undefined, locale?: Locale): string {
+  if (!categoryName) return '';
+  const match = CATEGORIES.find((c) => c.name === categoryName);
+  if (!match) return categoryName;
+  return t(`category.${match.id}.name`, locale);
 }
 
 export function useLocale(): [Locale, (l: Locale) => void] {

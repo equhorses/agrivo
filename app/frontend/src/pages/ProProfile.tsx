@@ -11,7 +11,7 @@ import { Star, MapPin, Briefcase, Calendar, MessageSquare, ArrowLeft, Award } fr
 import { PlanBadge } from '@/components/Badges';
 import { COUNTRIES, SEED_PROFESSIONALS } from '@/lib/constants';
 import { toast } from 'sonner';
-import { t, useLocale } from '@/lib/i18n';
+import { t, translateCategory, useLocale } from '@/lib/i18n';
 
 const client = createClient();
 
@@ -164,7 +164,7 @@ export default function ProProfile() {
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Briefcase className="h-4 w-4" />
-                    <span>{pro.specialty}</span>
+                    <span>{translateCategory(pro.specialty, locale)}</span>
                   </div>
                   {pro.years_experience && (
                     <div className="flex items-center gap-2 text-muted-foreground">

@@ -19,7 +19,7 @@ import { User, MessageSquare, Briefcase, CreditCard, Trash2 } from 'lucide-react
 import { toast } from 'sonner';
 import { COUNTRIES } from '@/lib/constants';
 import { getBackendErrorMessage } from '@/lib/errors';
-import { t, useLocale } from '@/lib/i18n';
+import { t, translateCategory, useLocale } from '@/lib/i18n';
 
 const client = createClient();
 
@@ -319,7 +319,7 @@ export default function Account() {
                         <div key={job.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border hover:border-emerald-200 cursor-pointer" onClick={() => navigate(`/jobs/${job.id}`)}>
                           <div>
                             <p className="font-medium">{job.title}</p>
-                            <p className="text-xs text-muted-foreground">{job.category}</p>
+                            <p className="text-xs text-muted-foreground">{translateCategory(job.category, locale)}</p>
                           </div>
                           <Badge variant="outline">{job.status === 'open' ? t('status.open', locale) : job.status === 'expired' ? t('status.expired', locale) : t('status.inProgress', locale)}</Badge>
                         </div>

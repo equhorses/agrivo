@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MapPin, Search, Plus } from 'lucide-react';
 import { COUNTRIES, CATEGORIES, SEED_JOBS } from '@/lib/constants';
 import { formatAmount, formatBudgetRange, useMyCurrency } from '@/lib/currency';
-import { t, useLocale } from '@/lib/i18n';
+import { t, translateCategory, useLocale } from '@/lib/i18n';
 
 const client = createClient();
 
@@ -114,7 +114,7 @@ export default function Jobs() {
                 <SelectContent>
                   <SelectItem value="all">{t('jobs.allCategories', locale)}</SelectItem>
                   {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.name}>{cat.icon} {cat.name}</SelectItem>
+                    <SelectItem key={cat.id} value={cat.name}>{cat.icon} {translateCategory(cat.name, locale)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -172,7 +172,7 @@ export default function Jobs() {
                             <div className="flex items-center gap-2 mb-3 flex-wrap">
                               {country && <img src={country.flag} alt={country.name} className="h-4 w-auto rounded-sm" />}
                               {isSeed && <Badge variant="secondary" className="text-xs">Ejemplo</Badge>}
-                              <Badge variant="outline" className="text-xs">{job.category}</Badge>
+                              <Badge variant="outline" className="text-xs">{translateCategory(job.category, locale)}</Badge>
                               <Badge variant="outline" className="text-xs">
                                 {job.contract_type === 'reverse_auction' ? 'Subasta' : 'Fijo'}
                               </Badge>

@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { COUNTRIES, SEED_JOBS } from '@/lib/constants';
 import UserIdentity from '@/components/UserIdentity';
 import { formatAmount, formatBudgetRange, useMyCurrency } from '@/lib/currency';
-import { t, useLocale } from '@/lib/i18n';
+import { t, translateCategory, useLocale } from '@/lib/i18n';
 
 const client = createClient();
 
@@ -266,7 +266,7 @@ export default function JobDetail() {
                   <div className="flex items-center gap-2 mb-4 flex-wrap">
                     {country && <img src={country.flag} alt={country.name} className="h-5 w-auto rounded-sm" />}
                     {isSeedJob && <Badge variant="secondary">Ejemplo</Badge>}
-                    <Badge variant="outline">{job.category}</Badge>
+                    <Badge variant="outline">{translateCategory(job.category, locale)}</Badge>
                     <Badge variant="outline">
                       {job.contract_type === 'reverse_auction' ? 'Subasta Inversa' : 'Precio Fijo'}
                     </Badge>
@@ -597,7 +597,7 @@ export default function JobDetail() {
                     <h4 className="font-semibold text-sm" style={{ fontFamily: 'Poppins, sans-serif' }}>{t('jobDetail.summary', locale)}</h4>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{t('jobDetail.category', locale)}</span>
-                      <span className="font-medium">{job.category}</span>
+                      <span className="font-medium">{translateCategory(job.category, locale)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{t('jobDetail.type', locale)}</span>
