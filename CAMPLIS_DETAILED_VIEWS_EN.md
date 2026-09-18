@@ -34,7 +34,7 @@ Fixed (sticky) navigation bar at the top of all pages. Adapts on scroll with bac
 ### Layout
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│ [Agrizia Logo]  │  Home  Jobs  Professionals  Pricing  │ 🇪🇸 ES ▼ │ [Login] [Register] │
+│ [Camplis Logo]  │  Home  Jobs  Professionals  Pricing  │ 🇪🇸 ES ▼ │ [Login] [Register] │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -42,7 +42,7 @@ Fixed (sticky) navigation bar at the top of all pages. Adapts on scroll with bac
 
 | Element | Component | Description |
 |---------|-----------|-------------|
-| Logo | `<img>` + `<span>` | 36x36px logo with "Agrizia" name in Poppins bold |
+| Logo | `<img>` + `<span>` | 36x36px logo with "Camplis" name in Poppins bold |
 | Navigation | `<Link>` | 4 links: Home, Jobs, Professionals, Pricing |
 | Language selector | `DropdownMenu` | Flags with code (ES, EN, PT, FR) |
 | Login | `Button ghost` | "Sign In" text |
@@ -82,13 +82,13 @@ Page footer with company information, quick links, categories, and legal data.
 ### Layout
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│ [Agrizia Logo]          │ Quick Links        │ Categories        │ Legal           │
+│ [Camplis Logo]          │ Quick Links        │ Categories        │ Legal           │
 │ Short description      │ • Jobs             │ • Drones          │ • Privacy       │
 │                        │ • Professionals    │ • Harvest         │ • Terms         │
 │ Country flags          │ • Pricing          │ • Pruning         │ • Cookies       │
 │                        │ • Dashboard        │ • Irrigation      │                 │
 ├─────────────────────────────────────────────────────────────────────┤
-│ © 2026 Agrizia. All rights reserved.                                  │
+│ © 2026 Camplis. All rights reserved.                                  │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -153,7 +153,7 @@ Page footer with company information, quick links, categories, and legal data.
 #### 3.3 How It Works
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│              How does Agrizia work?                                    │
+│              How does Camplis work?                                    │
 │                                                                      │
 │ ┌──────────────┐  ┌──────────────┐  ┌──────────────┐               │
 │ │ [🌐]         │  │ [🛡️]         │  │ [⚡]         │               │
@@ -858,4 +858,4 @@ Page footer with company information, quick links, categories, and legal data.
 
 *Document generated on July 11, 2026*
 *Version: 1.0*
-*Platform: Agrizia - Global Agricultural Services Marketplace*
+*Platform: Camplis - Global Agricultural Services Marketplace*

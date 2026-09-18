@@ -54,7 +54,7 @@ export default function Support() {
         subject: subject.trim(), message: message.trim(),
       }, 'POST');
       setSent({ priority: !!res?.data?.priority });
-      toast.success('Mensaje enviado al equipo de Agrizia');
+      toast.success('Mensaje enviado al equipo de Camplis');
     } catch (err: any) {
       toast.error(getBackendErrorMessage(err, 'No se pudo enviar la consulta'));
     } finally {
@@ -108,7 +108,7 @@ export default function Support() {
                   </Button>
                   <p className="text-xs text-muted-foreground text-center">
                     {t('support.alsoWriteTo', locale)}{' '}
-                    <a href="mailto:soporte@agrizia.com" className="text-emerald-700 hover:underline">soporte@agrizia.com</a>
+                    <a href="mailto:soporte@camplis.com" className="text-emerald-700 hover:underline">soporte@camplis.com</a>
                   </p>
                 </>
               )}

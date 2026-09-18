@@ -1,5 +1,5 @@
 export const BRAND = {
-  name: 'Agrizia',
+  name: 'Camplis',
   tagline: 'Marketplace Global de Servicios Agrícolas',
   description: 'Conectamos agricultores con profesionales del campo en todo el mundo',
 };

@@ -13,7 +13,7 @@ export default function Footer() {
             <div className="flex items-center gap-2">
               <img
                 src="https://mgx-backend-cdn.metadl.com/generate/images/1410088/2026-07-07/sakrtaqcaiza/agrivo-favicon-logo.png"
-                alt="Agrizia"
+                alt="Camplis"
                 className="h-8 w-8 rounded-lg object-contain"
               />
               <span className="font-bold text-lg text-white" style={{ fontFamily: 'Poppins, sans-serif' }}>{BRAND.name}</span>

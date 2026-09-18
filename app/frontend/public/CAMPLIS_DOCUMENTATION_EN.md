@@ -22,7 +22,7 @@
 
 ## 1. GENERAL DESCRIPTION
 
-**Agrizia** is a global marketplace connecting farmers with field professionals. The platform enables:
+**Camplis** is a global marketplace connecting farmers with field professionals. The platform enables:
 
 - **Post agricultural jobs** with reverse auction or fixed price system
 - **Professional directory** with KYC verification
@@ -768,4 +768,4 @@ app/
 
 *Document generated on July 11, 2026*
 *Version: 1.0*
-*Platform: Agrizia - Global Agricultural Services Marketplace*
+*Platform: Camplis - Global Agricultural Services Marketplace*

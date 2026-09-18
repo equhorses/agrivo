@@ -4,7 +4,7 @@ from sqlalchemy import Boolean, Column, DateTime, Integer, String
 
 
 class HouseAds(Base):
-    """Ad banners Agrizia controls directly — one per named 'slot' (a spot
+    """Ad banners Camplis controls directly — one per named 'slot' (a spot
     reserved in the UI, e.g. 'home_top')."""
     __tablename__ = "house_ads"
     __table_args__ = {"extend_existing": True}

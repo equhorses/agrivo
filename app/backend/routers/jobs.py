@@ -221,7 +221,7 @@ async def create_jobs(
 
     # Para publicar hace falta haber completado el perfil primero (misma
     # idea que el aviso del frontend en /jobs/new) — salvo el equipo de
-    # Agrizia (staff/admin), que no tiene por qué tener un perfil de cara
+    # Camplis (staff/admin), que no tiene por qué tener un perfil de cara
     # al público para poder gestionar la plataforma.
     if current_user.role not in STAFF_ROLES:
         profile_result = await db.execute(select(Profiles).where(Profiles.user_id == str(current_user.id)))

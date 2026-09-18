@@ -1,4 +1,4 @@
-# 📱 Agrizia - Platform Visual Views Document
+# 📱 Camplis - Platform Visual Views Document
 
 ## Complete Visual Guide of the User Interface
 
@@ -11,7 +11,7 @@ The main page features a hero section with an agricultural drone image, platform
 ![Landing Page - Hero Section](https://mgx-backend-cdn.metadl.com/generate/images/1410088/2026-07-11/sisztdacaiza/vista-01-landing-hero.png)
 
 ### Main elements:
-- **Header**: Agrizia logo, navigation (Home, Jobs, Professionals, Pricing), language selector, Sign In/Sign Up buttons
+- **Header**: Camplis logo, navigation (Home, Jobs, Professionals, Pricing), language selector, Sign In/Sign Up buttons
 - **Hero Section**: Agricultural drone image, headline "Connect with the best field professionals", main CTAs
 - **Country flags**: Spain, Brazil, Argentina, USA, Portugal, France, India, Australia, Ukraine, Mexico
 - **Statistics**: 2,400+ active professionals, 1,344 completed jobs, 4 operational countries, 47% satisfaction
@@ -197,4 +197,4 @@ Public page with all professional information.
 
 ---
 
-*Document generated on July 11, 2026 - Agrizia Platform v1.0*
+*Document generated on July 11, 2026 - Camplis Platform v1.0*

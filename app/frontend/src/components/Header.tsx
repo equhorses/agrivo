@@ -105,7 +105,7 @@ export default function Header() {
         <Link to="/" className="flex items-center gap-2.5">
           <img
             src="https://mgx-backend-cdn.metadl.com/generate/images/1410088/2026-07-07/sakrtaqcaiza/agrivo-favicon-logo.png"
-            alt="Agrizia"
+            alt="Camplis"
             className="h-9 w-9 rounded-lg object-contain"
           />
           <span className="font-bold text-xl tracking-tight" style={{ fontFamily: 'Poppins, sans-serif' }}>
@@ -217,7 +217,7 @@ export default function Header() {
                   </div>
                   <span className="text-sm font-medium">
                     {['admin', 'marketing', 'seguridad', 'moderacion', 'soporte'].includes(user.role)
-                      ? 'Equipo Agrizia'
+                      ? 'Equipo Camplis'
                       : (user.nickname || user.email?.split('@')[0])}
                   </span>
                 </Button>
@@ -279,7 +279,7 @@ export default function Header() {
             <div className="flex items-center gap-2 mb-8 mt-2">
               <img
                 src="https://mgx-backend-cdn.metadl.com/generate/images/1410088/2026-07-07/sakrtaqcaiza/agrivo-favicon-logo.png"
-                alt="Agrizia"
+                alt="Camplis"
                 className="h-8 w-8 rounded-lg object-contain"
               />
               <span className="font-bold text-lg" style={{ fontFamily: 'Poppins, sans-serif' }}>{BRAND.name}</span>

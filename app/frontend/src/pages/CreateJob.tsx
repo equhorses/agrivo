@@ -47,7 +47,7 @@ export default function CreateJob() {
           return;
         }
         setUser(res.data);
-        // El equipo de Agrizia (staff/admin) no necesita perfil para
+        // El equipo de Camplis (staff/admin) no necesita perfil para
         // publicar — solo aplica a cuentas normales.
         if (['admin', 'marketing', 'seguridad', 'moderacion', 'soporte'].includes(res.data.role)) {
           setHasProfile(true);

@@ -104,7 +104,7 @@ Esta política puede actualizarse periódicamente. Te notificaremos sobre cambio
 
 Para cualquier consulta, sugerencia o reclamación, puedes contactarnos a través de:
 
-**Email**: soporte@agrizia.com
+**Email**: soporte@camplis.com
 
 **Horario de atención**: Lunes a Viernes, 9:00 - 18:00 (CET)
 

@@ -310,8 +310,8 @@ export default function Publicidad() {
 
                 <p className="text-xs text-muted-foreground text-center">
                   {t('ads.anyProblem', locale)}{' '}
-                  <a href="mailto:soporte@agrizia.com" className="text-emerald-700 hover:underline">
-                    {t('ads.writeToSupport', locale)} soporte@agrizia.com
+                  <a href="mailto:soporte@camplis.com" className="text-emerald-700 hover:underline">
+                    {t('ads.writeToSupport', locale)} soporte@camplis.com
                   </a>
                 </p>
               </CardContent>

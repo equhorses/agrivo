@@ -4,7 +4,7 @@ from sqlalchemy import Boolean, Column, DateTime, Integer, String
 
 
 class Subscriptions(Base):
-    """One row per user: their current Agrizia subscription plan.
+    """One row per user: their current Camplis subscription plan.
 
     status: 'inactive' | 'active' (kept in sync with Stripe via webhook —
     see services/subscriptions.py._handle_subscription_change).
